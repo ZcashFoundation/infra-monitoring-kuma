@@ -87,7 +87,7 @@ jobs:
 
       - name: Deploy to cloud run
         id: deploy
-        uses: google-github-actions/deploy-cloudrun@v2.2.0
+        uses: google-github-actions/deploy-cloudrun@v2.6.0
         with:
           service: ${{ inputs.app_name }}-${{ needs.versioning.outputs.version || env.GITHUB_HEAD_REF_SLUG || inputs.environment }}
           image: ${{ inputs.registry }}/${{ inputs.app_name }}@${{ inputs.image_digest }}
@@ -95,12 +95,16 @@ jobs:
           gcloud_component: alpha
           env_vars: |
             REPLICA_URL=${{ vars.REPLICA_URL }}
+          env_vars_update_strategy: overwrite
           # secrets: |
           flags: |
             --min-instances=${{ inputs.min_instances }}
             --max-instances=${{ inputs.max_instances }}
             --cpu=${{ inputs.cpu }}
             --memory=${{ inputs.memory }}
+            --service-account=${{ vars.GCP_BUCKET_SA }}
+            --add-volume=name=files,type=in-memory
+            --add-volume-mount=volume=files,mount-path=/data
             --network=projects/zfnd-dev-net-spoke-0/global/networks/dev-spoke-0
             --subnet=projects/zfnd-dev-net-spoke-0/regions/us-east1/subnetworks/dev-default-ue1
 

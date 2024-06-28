@@ -2,19 +2,22 @@
 # ===================== Create base stage =====================
 ARG NODE_VERSION=lts
 ARG UPTIME_KUMA_VERSION=1.23.13
-ARG WORK_DIR=/app
+ARG APP_HOME=/app
 FROM louislam/uptime-kuma:${UPTIME_KUMA_VERSION} AS base
 
 ARG PORT=3001
-ARG WORK_DIR
+ARG APP_HOME
 
-ENV WORK_DIR=${WORK_DIR}
+ENV APP_HOME=${APP_HOME}
 
-WORKDIR ${WORK_DIR}
+WORKDIR ${APP_HOME}
 
 # ==== App specific variables
 
 ENV UPTIME_KUMA_IS_CONTAINER=1
+ARG DATA_DIR=/data/
+ENV DATA_DIR=${DATA_DIR}
+ENV DB_PATH=${DATA_DIR}kuma.db
 
 # ===================== App Runner Stage =====================
 FROM base AS runner
@@ -27,9 +30,9 @@ RUN apt-get update --no-install-recommends \
 COPY --from=litestream/litestream:0.3.13 /usr/local/bin/litestream /usr/local/bin/litestream
 
 # Create data directory (although this will likely be mounted too) as some services won't mount it.
-RUN mkdir -p /data
+RUN mkdir -p ${DATA_DIR}
 
-    EXPOSE ${PORT}
+EXPOSE ${PORT}
 
 ENV PORT=${PORT}
 
