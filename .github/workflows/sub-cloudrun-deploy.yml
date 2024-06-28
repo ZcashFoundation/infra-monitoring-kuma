@@ -93,7 +93,8 @@ jobs:
           image: ${{ inputs.registry }}/${{ inputs.app_name }}@${{ inputs.image_digest }}
           region: ${{ inputs.region }}
           gcloud_component: alpha
-          # env_vars: |
+          env_vars: |
+            REPLICA_URL=${{ vars.REPLICA_URL }}
           # secrets: |
           flags: |
             --min-instances=${{ inputs.min_instances }}

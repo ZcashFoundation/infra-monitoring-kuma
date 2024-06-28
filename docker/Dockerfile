@@ -26,8 +26,6 @@ RUN apt-get update --no-install-recommends \
 # Copy all necessary files
 COPY --from=litestream/litestream:0.3.13 /usr/local/bin/litestream /usr/local/bin/litestream
 
-USER node
-
 EXPOSE ${PORT}
 
 ENV PORT=${PORT}
