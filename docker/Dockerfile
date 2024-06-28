@@ -33,7 +33,7 @@ ENV PORT=${PORT}
 HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=5 CMD extra/healthcheck
 
 # Copy Litestream configuration file & startup script.
-COPY etc/litestream.yml /etc/litestream.yml
+# COPY etc/litestream.yml /etc/litestream.yml
 COPY scripts/run.sh /scripts/run.sh
 
 CMD [ "/scripts/run.sh" ]
