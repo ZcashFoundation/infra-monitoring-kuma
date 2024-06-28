@@ -2,7 +2,6 @@
 # ===================== Create base stage =====================
 ARG NODE_VERSION=lts
 ARG UPTIME_KUMA_VERSION=1.23.13
-ARG LITESTREAM_VERSION=0.3.13
 ARG WORK_DIR=/app
 FROM louislam/uptime-kuma:${UPTIME_KUMA_VERSION} AS base
 
@@ -16,8 +15,6 @@ WORKDIR ${WORK_DIR}
 # ==== App specific variables
 
 ENV UPTIME_KUMA_IS_CONTAINER=1
-ENV UPTIME_KUMA_VERSION=${UPTIME_KUMA_VERSION}
-ENV LITESTREAM_VERSION=${LITESTREAM_VERSION}
 
 # ===================== App Runner Stage =====================
 FROM base AS runner
@@ -27,14 +24,13 @@ RUN apt-get update --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy all necessary files
-COPY --from=litestream/litestream:${LITESTREAM_VERSION} /usr/local/bin/litestream /usr/local/bin/litestream
+COPY --from=litestream/litestream:0.3.13 /usr/local/bin/litestream /usr/local/bin/litestream
 
 USER node
 
 EXPOSE ${PORT}
 
-ENV PORT ${PORT}
-ENV HOSTNAME 0.0.0.0
+ENV PORT=${PORT}
 
 HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=5 CMD extra/healthcheck
 
