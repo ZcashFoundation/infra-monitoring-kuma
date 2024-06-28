@@ -4,11 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - '**.sh*'
-      - '**.ts*'
-      - Dockerfile
-      - package.json
-      - pnpm-lock.yaml
+      - '**/Dockerfile'
+      - 'scripts/**'
+      - 'etc/litestream.yml'
       - .github/workflows/ci-lint-codebase.yml
 
   push:
