@@ -4,11 +4,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     paths:
-      - '**.sh*'
-      - '**.ts*'
-      - Dockerfile
-      - package.json
-      - pnpm-lock.yaml
+      - '**/Dockerfile'
+      - 'scripts/**'
+      - 'etc/litestream.yml'
       - .github/workflows/cd-deploy-to-dev.yml
       - .github/workflows/sub-cloudrun-deploy.yml
 
