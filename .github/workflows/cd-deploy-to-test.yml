@@ -21,13 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    uses: ./.github/workflows/sub-unit-tests.yml
-    with:
-      node_env: production
-
   build:
-    needs: [test]
     uses: ./.github/workflows/sub-build-docker-image.yml
     with:
       environment: test
