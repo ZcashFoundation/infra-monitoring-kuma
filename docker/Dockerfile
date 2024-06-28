@@ -26,7 +26,10 @@ RUN apt-get update --no-install-recommends \
 # Copy all necessary files
 COPY --from=litestream/litestream:0.3.13 /usr/local/bin/litestream /usr/local/bin/litestream
 
-EXPOSE ${PORT}
+# Create data directory (although this will likely be mounted too) as some services won't mount it.
+RUN mkdir -p /data
+
+    EXPOSE ${PORT}
 
 ENV PORT=${PORT}
 
