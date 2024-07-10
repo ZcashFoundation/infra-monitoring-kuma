@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # ===================== Create base stage =====================
 ARG NODE_VERSION=lts
-ARG UPTIME_KUMA_VERSION=1.23.13
+ARG UPTIME_KUMA_VERSION=nightly2
 ARG APP_HOME=/app
 FROM louislam/uptime-kuma:${UPTIME_KUMA_VERSION} AS base
 
