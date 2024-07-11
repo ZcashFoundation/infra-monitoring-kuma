@@ -37,6 +37,7 @@ HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=5 CMD ext
 # Copy Litestream configuration file & startup script.
 COPY etc/litestream.yml /etc/litestream.yml
 COPY scripts/run.sh /scripts/run.sh
+COPY scripts/db/2024-07-11-0000-dns-results.js ./db/2024-07-11-0000-dns-results.js
 
 USER node
 
