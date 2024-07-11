@@ -15,16 +15,12 @@ WORKDIR ${APP_HOME}
 # ==== App specific variables
 
 ENV UPTIME_KUMA_IS_CONTAINER=1
-ARG DATA_DIR=/data/
+ARG DATA_DIR=./data/
 ENV DATA_DIR=${DATA_DIR}
 ENV DB_PATH=${DATA_DIR}kuma.db
 
 # ===================== App Runner Stage =====================
 FROM base AS runner
-
-RUN apt-get update --no-install-recommends \
-    && apt-get install -y ca-certificates iputils-ping wget \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copy all necessary files
 COPY --from=litestream/litestream:0.3.13 /usr/local/bin/litestream /usr/local/bin/litestream

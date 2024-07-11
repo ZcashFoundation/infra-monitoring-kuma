@@ -2,7 +2,7 @@
 set -e
 
 # Restore the database if it does not already exist.
-if [ -f "${DB_PATH}" ]; then
+if [[ -f "${DB_PATH}" ]]; then
 	echo "Database already exists, skipping restore"
 else
 	echo "No database found, restoring from replica if exists"
