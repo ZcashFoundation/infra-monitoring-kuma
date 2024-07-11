@@ -12,35 +12,35 @@ on:
       image_digest:
         required: true
         type: string
-        description: 'The image digest to deploy'
+        description: The image digest to deploy
       project_id:
         required: true
         type: string
-        description: 'The project to deploy to'
+        description: The project to deploy to
       region:
         required: true
         type: string
-        description: 'The region to deploy to'
+        description: The region to deploy to
       environment:
         required: false
         type: string
-        description: 'The environment to deploy to'
+        description: The environment to deploy to
       min_instances:
         required: false
         type: string
-        description: 'The minimum number of instances to deploy'
+        description: The minimum number of instances to deploy
       max_instances:
         required: false
         type: string
-        description: 'The maximum number of instances to deploy'
+        description: The maximum number of instances to deploy
       cpu:
         required: false
         type: string
-        description: 'The number of CPUs to use for the service'
+        description: The number of CPUs to use for the service
       memory:
         required: false
         type: string
-        description: 'The amount of memory to use for the service'
+        description: The amount of memory to use for the service
 
 jobs:
   versioning:
@@ -69,8 +69,8 @@ jobs:
       name: ${{ inputs.environment }}
       url: ${{ steps.deploy.outputs.url }}
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: read
+      id-token: write
     steps:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v4.4.1
@@ -95,6 +95,12 @@ jobs:
           gcloud_component: alpha
           env_vars: |
             REPLICA_URL=${{ vars.REPLICA_URL }}
+            UPTIME_KUMA_DB_TYPE=${{ vars.UPTIME_KUMA_DB_TYPE }}
+            UPTIME_KUMA_DB_HOSTNAME=${{ vars.UPTIME_KUMA_DB_HOSTNAME   }}
+            UPTIME_KUMA_DB_PORT=${{ vars.UPTIME_KUMA_DB_PORT }}
+            UPTIME_KUMA_DB_NAME=${{ vars.UPTIME_KUMA_DB_NAME }}
+            UPTIME_KUMA_DB_USERNAME=${{ vars.UPTIME_KUMA_DB_USERNAME }}
+            UPTIME_KUMA_DB_PASSWORD=${{ secrets.UPTIME_KUMA_DB_PASSWORD }}
           env_vars_update_strategy: overwrite
           # secrets: |
           flags: |
@@ -104,7 +110,7 @@ jobs:
             --memory=${{ inputs.memory }}
             --service-account=${{ vars.GCP_BUCKET_SA }}
             --add-volume=name=files,type=in-memory
-            --add-volume-mount=volume=files,mount-path=/data
+            --add-volume-mount=volume=files,mount-path=/app/data
             --network=projects/zfnd-dev-net-spoke-0/global/networks/dev-spoke-0
             --subnet=projects/zfnd-dev-net-spoke-0/regions/us-east1/subnetworks/dev-default-ue1
 

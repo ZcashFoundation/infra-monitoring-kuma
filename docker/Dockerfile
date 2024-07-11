@@ -26,7 +26,7 @@ FROM base AS runner
 COPY --from=litestream/litestream:0.3.13 /usr/local/bin/litestream /usr/local/bin/litestream
 
 # Create data directory (although this will likely be mounted too) as some services won't mount it.
-RUN mkdir -p ${DATA_DIR}
+RUN mkdir -p "${DATA_DIR}"
 
 EXPOSE ${PORT}
 
@@ -37,5 +37,7 @@ HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=5 CMD ext
 # Copy Litestream configuration file & startup script.
 COPY etc/litestream.yml /etc/litestream.yml
 COPY scripts/run.sh /scripts/run.sh
+
+USER node
 
 CMD [ "/scripts/run.sh" ]
