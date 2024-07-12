@@ -5,7 +5,7 @@ date: 2024-07-12
 story: [ZF Engineering update: 2024 Sprint 13 (June 18th - July 1st.)](https://forum.zcashcommunity.com/t/zf-engineering-update-2024-sprint-13-june-18th-july-1st/48210#:~:text=DNSSeeder%20not%20responding%20to%20requests)
 ---
 
-# {short title of solved problem and solution}
+# Implementing Uptime Kuma for monitoring DNS Seeder and other services
 
 ## Context & Problem Statement
 
