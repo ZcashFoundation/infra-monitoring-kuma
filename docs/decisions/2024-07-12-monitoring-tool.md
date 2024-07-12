@@ -33,11 +33,11 @@ We chose Uptime Kuma because it's open-source, and it's a self-hosted solution, 
 
 ### Expected Consequences <!-- optional -->
 
-* List of unrelated outcomes this decision creates.
-<!-- Positive, negative, and/or neutral consequences, as lll of them affect the team and project in the future. -->
 * We will need to set up infrastructure to host Uptime Kuma.
 * There's an initial learning curve to set up and configure Uptime Kuma.
 * We will have an overhead of maintaining Uptime Kuma.
+* We can use Uptime Kuma to monitor other services in the future.
+* We'll be able publish a public monitoring dashboard for the community.
 
 ## More Information <!-- optional -->
 
