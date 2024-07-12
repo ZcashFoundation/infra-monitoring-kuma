@@ -2,7 +2,7 @@
 # status and date are the only required elements. Feel free to remove the rest.
 status: {[proposed | rejected | approved | deprecated | … | superceded by [2021-01-01 Example](2021-01-01-example.md)]}
 date: {YYYY-MM-DD when the decision was last updated}
-based-on: {[Short Title](2021-05-15-short-title.md)}
+builds-on: {[Short Title](2021-05-15-short-title.md)}
 story: {description or link to contextual issue}
 ---
 

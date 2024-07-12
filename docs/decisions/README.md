@@ -7,7 +7,7 @@ These records provide context, trade-offs, and reasoning taken at our community 
 Get started created a new decision record with the template:
 
 ```sh
-cp template.md NN-title-with-dashes.md
+cp template.md YYYY-MM-DD-title-with-dashes.md
 ```
 
 For more rational behind this approach, see [Michael Nygard's article](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions).
