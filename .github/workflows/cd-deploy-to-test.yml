@@ -1,7 +1,5 @@
 name: Deploy to test
 
-permissions: read-all
-
 on:
   push:
     branches:
@@ -19,6 +17,8 @@ concurrency:
   # to run, cancelling any workflows in between
   group: ${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+
+permissions: read-all
 
 jobs:
   build:

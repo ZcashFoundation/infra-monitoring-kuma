@@ -1,7 +1,5 @@
 name: Deploy to prod
 
-permissions: read-all
-
 on:
   release:
     types:
@@ -13,6 +11,8 @@ concurrency:
   # to run, cancelling any workflows in between
   group: ${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+
+permissions: read-all
 
 jobs:
   build:
