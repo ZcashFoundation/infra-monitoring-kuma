@@ -2,7 +2,7 @@
 set -e
 
 if [[ "${UPTIME_KUMA_DB_TYPE}" == 'mariadb' ]]; then
-	exec node server/server.js
+	node server/server.js
 else
 	# Restore the database if it does not already exist.
 	if [[ -f "${DB_PATH}" ]]; then

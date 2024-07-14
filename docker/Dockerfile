@@ -42,4 +42,5 @@ COPY scripts/db/knex_init_db.js ./db/knex_init_db.js
 
 USER node
 
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD [ "/scripts/run.sh" ]
