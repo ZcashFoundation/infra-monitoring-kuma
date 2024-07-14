@@ -8,6 +8,8 @@ on:
     types:
       - closed
 
+permissions: read-all
+
 jobs:
   delete:
     runs-on: ubuntu-latest

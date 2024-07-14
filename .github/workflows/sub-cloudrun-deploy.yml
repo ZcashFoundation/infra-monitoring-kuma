@@ -42,6 +42,8 @@ on:
         type: string
         description: The amount of memory to use for the service
 
+permissions: read-all
+
 jobs:
   versioning:
     runs-on: ubuntu-latest
