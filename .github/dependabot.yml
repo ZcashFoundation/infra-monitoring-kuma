@@ -1,22 +1,19 @@
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: monthly
-    commit-message:
-      prefix: "bump(deps): "
-
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: monthly
     commit-message:
-      prefix: "bump(docker) "
+      prefix: "deps(docker) "
 
   - package-ecosystem: github-actions
-    directory: /.github/workflows
+    directory: /
     schedule:
       interval: monthly
     commit-message:
-      prefix: "bump(actions) "
+      prefix: "deps(actions) "
+    groups:
+      devops:
+        patterns:
+          - "*"
