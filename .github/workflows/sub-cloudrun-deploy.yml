@@ -106,9 +106,9 @@ jobs:
             UPTIME_KUMA_DB_PORT=${{ vars.UPTIME_KUMA_DB_PORT }}
             UPTIME_KUMA_DB_NAME=${{ vars.UPTIME_KUMA_DB_NAME }}
             UPTIME_KUMA_DB_USERNAME=${{ vars.UPTIME_KUMA_DB_USERNAME }}
-            UPTIME_KUMA_DB_PASSWORD=${{ secrets.UPTIME_KUMA_DB_PASSWORD }}
           env_vars_update_strategy: overwrite
-          # secrets: |
+          secrets: |
+            UPTIME_KUMA_DB_PASSWORD=UPTIME_KUMA_DB_PASSWORD:latest
           flags: |
             --min-instances=${{ inputs.min_instances }}
             --max-instances=${{ inputs.max_instances }}
