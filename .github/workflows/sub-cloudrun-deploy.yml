@@ -14,7 +14,7 @@ on:
         type: string
         description: The image digest to deploy
       project_id:
-        required: true
+        required: false
         type: string
         description: The project to deploy to
       region:
@@ -77,12 +77,16 @@ jobs:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v4.5.0
 
+      - uses: actions/checkout@v4.1.7
+        with:
+          persist-credentials: false
+
       - name: Authenticate to Google Cloud
         id: auth
         uses: google-github-actions/auth@v2.1.3
         with:
           workload_identity_provider: '${{ vars.GCP_WIF }}'
-          service_account: '${{ vars.GCP_DEPLOYMENTS_SA }}'
+          project_id: '${{ vars.GCP_PROJECT }}'
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2.1.0
