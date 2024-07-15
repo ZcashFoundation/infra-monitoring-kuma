@@ -115,11 +115,11 @@ jobs:
             --cpu=${{ inputs.cpu }}
             --memory=${{ inputs.memory }}
             --service-account=${{ vars.GCP_BUCKET_SA }}
+            --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }}
             --add-volume=name=files,type=in-memory
             --add-volume-mount=volume=files,mount-path=/app/data
             --network=projects/zfnd-dev-net-spoke-0/global/networks/dev-spoke-0
             --subnet=projects/zfnd-dev-net-spoke-0/regions/us-east1/subnetworks/dev-default-ue1
-            --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }}
 
       - name: Allow unauthenticated calls to the service
         run: |
