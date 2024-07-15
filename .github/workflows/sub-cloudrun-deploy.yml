@@ -118,10 +118,11 @@ jobs:
             --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }}
             --add-volume=name=files,type=in-memory
             --add-volume-mount=volume=files,mount-path=/app/data
-            --network=projects/zfnd-dev-net-spoke-0/global/networks/dev-spoke-0
-            --subnet=projects/zfnd-dev-net-spoke-0/regions/us-east1/subnetworks/dev-default-ue1
+            --network=${{ vars.GCP_NETWORK }}
+            --subnet=${{ vars.GCP_SUBNETWORK }}
 
       - name: Allow unauthenticated calls to the service
+        if: ${{ inputs.environment != 'prod' }}
         run: |
           gcloud run services add-iam-policy-binding ${{ inputs.app_name }}-${{ needs.versioning.outputs.version || env.GITHUB_HEAD_REF_SLUG || inputs.environment }} \
           --region=${{ inputs.region }} --member=allUsers --role=roles/run.invoker --quiet
