@@ -9,7 +9,7 @@ story: [ZF Engineering update: 2024 Sprint 13 (June 18th - July 1st.)](https://f
 
 ## Context & Problem Statement
 
-The Foundation has multiple production services supporting the network, and we need to monitor them, as we've recently had issues with our DNS Seeder service, and the team realizing after CI failed in Zebra. We need to have a monitoring tool to keep track of the services' health and performance, and be notified proactively when something goes wrong.
+The Foundation runs multiple production services supporting the network, and we need to monitor them, as we've recently had issues with our DNS Seeder service, that have only been noticed once CI failed in Zebra. We need to have a monitoring tool to keep track of the services' health and performance, and be notified proactively when something goes wrong.
 
 ## Priorities & Constraints <!-- optional -->
 
