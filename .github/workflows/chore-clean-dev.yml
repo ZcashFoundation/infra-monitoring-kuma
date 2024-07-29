@@ -32,4 +32,4 @@ jobs:
 
       - name: Removing CR service
         run: |
-          gcloud run services delete ${{ vars.APP_NAME }}-${{ env.GITHUB_HEAD_REF_SLUG || env.GITHUB_REF_SLUG }} --region=${{ vars.GOOGLE_CLOUD_REGION }} --quiet
+          gcloud run services delete ${{ vars.APP_NAME }}-${{ env.GITHUB_HEAD_REF_SLUG || env.GITHUB_REF_SLUG }} --region=${{ vars.GCP_REGION }} --quiet
