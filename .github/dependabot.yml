@@ -2,18 +2,28 @@ version: 2
 updates:
   - package-ecosystem: docker
     directory: /docker
+    pull-request-branch-name:
+      separator: "-"
     schedule:
       interval: monthly
     commit-message:
-      prefix: "deps(docker) "
+      prefix: "deps(docker): "
 
   - package-ecosystem: github-actions
-    directory: /
+    directory: "/"
+    pull-request-branch-name:
+      separator: "-"
     schedule:
-      interval: monthly
+      interval: weekly
     commit-message:
-      prefix: "deps(actions) "
+      prefix: "deps(actions): "
     groups:
-      devops:
+      docker:
+        patterns:
+          - "docker*"
+      gcp:
+        patterns:
+          - "google-github-actions*"
+      others:
         patterns:
           - "*"
