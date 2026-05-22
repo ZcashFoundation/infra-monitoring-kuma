@@ -6,8 +6,6 @@ on:
       - main
     paths:
       - '**/Dockerfile'
-      - 'scripts/**'
-      - 'etc/litestream.yml'
       - .github/workflows/cd-deploy-to-test.yml
       - .github/workflows/sub-cloudrun-deploy.yml
 

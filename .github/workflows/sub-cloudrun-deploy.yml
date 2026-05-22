@@ -100,9 +100,8 @@ jobs:
           region: ${{ inputs.region }}
           gcloud_component: alpha
           env_vars: |
-            REPLICA_URL=${{ vars.REPLICA_URL }}
             UPTIME_KUMA_DB_TYPE=${{ vars.UPTIME_KUMA_DB_TYPE }}
-            UPTIME_KUMA_DB_HOSTNAME=${{ vars.UPTIME_KUMA_DB_HOSTNAME   }}
+            UPTIME_KUMA_DB_HOSTNAME=${{ vars.UPTIME_KUMA_DB_HOSTNAME }}
             UPTIME_KUMA_DB_PORT=${{ vars.UPTIME_KUMA_DB_PORT }}
             UPTIME_KUMA_DB_NAME=${{ vars.UPTIME_KUMA_DB_NAME }}
             UPTIME_KUMA_DB_USERNAME=${{ vars.UPTIME_KUMA_DB_USERNAME }}
