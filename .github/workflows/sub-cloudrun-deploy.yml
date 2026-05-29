@@ -42,7 +42,13 @@ on:
         type: string
         description: The amount of memory to use for the service
 
-permissions: read-all
+# NOTE: do not use `read-all`. As a reusable workflow this may not request more
+# permissions than the caller grants, and `read-all` now expands to include newer
+# scopes (artifact-metadata, code-quality, models, vulnerability-alerts) that the
+# callers don't grant -> the run is rejected at startup. Request only what's used;
+# the deploy job additionally declares `id-token: write`.
+permissions:
+  contents: read
 
 jobs:
   versioning:
