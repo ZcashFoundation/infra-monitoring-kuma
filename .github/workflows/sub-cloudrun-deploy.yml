@@ -87,6 +87,10 @@ jobs:
         with:
           workload_identity_provider: '${{ vars.GCP_WIF }}'
           project_id: '${{ vars.GCP_PROJECT }}'
+          # Impersonate the deployments SA (matches the build job and zebra's
+          # deploy). Without this, WIF auth has no identity to act as and the
+          # Cloud Run deploy can't authorize.
+          service_account: '${{ vars.GCP_DEPLOYMENTS_SA }}'
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2.1.0
