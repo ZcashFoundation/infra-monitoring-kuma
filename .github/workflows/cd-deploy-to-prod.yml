@@ -54,4 +54,7 @@ jobs:
       max_instances: '10'
       cpu: '1'
       memory: 1Gi
+      # Uptime Kuma runs a continuous background monitoring loop; keep CPU
+      # always allocated so prod isn't throttled/disconnected between requests.
+      no_cpu_throttling: true
     secrets: inherit

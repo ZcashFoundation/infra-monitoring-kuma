@@ -41,6 +41,14 @@ on:
         required: false
         type: string
         description: The amount of memory to use for the service
+      no_cpu_throttling:
+        required: false
+        type: boolean
+        default: false
+        description: >-
+          Allocate CPU for the full instance lifetime (instance-based billing).
+          Required for always-on workloads like Uptime Kuma, whose background
+          monitoring loop is otherwise throttled/disconnected between requests.
 
 # NOTE: do not use `read-all`. As a reusable workflow this may not request more
 # permissions than the caller grants, and `read-all` now expands to include newer
@@ -123,6 +131,7 @@ jobs:
             --max-instances=${{ inputs.max_instances }}
             --cpu=${{ inputs.cpu }}
             --memory=${{ inputs.memory }}
+            ${{ inputs.no_cpu_throttling && '--no-cpu-throttling' || '' }}
             --service-account=${{ vars.GCP_BUCKET_SA }}
             --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }}
             --add-volume=name=files,type=in-memory
