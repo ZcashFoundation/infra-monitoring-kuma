@@ -77,7 +77,10 @@ function buildSlackNotification(n) {
         name: n.name,
         type: "slack",
         isDefault: !!n.default,
-        applyExisting: false,
+        // One-time: when the notification is created, attach it to all monitors
+        // that already exist (Kuma honors this in Notification.save). Lets you
+        // add a channel after monitors are imported and have it wired up.
+        applyExisting: !!n.applyExisting,
         slackwebhookURL: url,
         slackchannel: n.channel || "",
         slackusername: n.username || "Uptime Kuma",

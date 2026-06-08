@@ -15,7 +15,8 @@ tags:
 notifications:
   - name: Slack
     type: slack
-    default: false
+    default: true          # pre-enabled for new monitors created in the UI
+    applyExisting: true     # on creation, attach to all already-existing monitors
     webhookEnv: SLACK_WEBHOOK_URL
     channel: "#alerts"
     username: "Uptime Kuma"
