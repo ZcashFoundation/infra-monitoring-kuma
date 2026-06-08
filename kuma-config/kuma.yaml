@@ -1,0 +1,137 @@
+# Declarative desired state for the Uptime Kuma instance.
+#
+# Applied by apply.js over the Socket.IO API (Kuma 2.x has no import/REST).
+# Idempotent: entities are matched by name and skipped if they already exist.
+# Secrets (webhook URLs, admin password) are NEVER stored here — they come from
+# environment variables, which the apply wrapper sources from Secret Manager.
+
+# Tag definitions (name -> colour). Monitors reference tags by name + value.
+tags:
+  DNS: "#4B5563"
+  Network: "#2563EB"
+  Org: "#D97706"
+
+# Notification channels. `webhookEnv` names the env var holding the secret URL.
+notifications:
+  - name: Slack
+    type: slack
+    default: false
+    webhookEnv: SLACK_WEBHOOK_URL
+    channel: "#alerts"
+    username: "Uptime Kuma"
+    iconEmoji: ":robot_face:"
+    richMessage: true
+
+# Monitor groups (created first; monitors reference them by name).
+groups:
+  - DNS Seeders
+  - Web Pages
+
+# Monitors. `group` nests under a group; `notifications` attaches channels;
+# `tags` are [{name, value}] pairs (colour comes from the tags map above).
+monitors:
+  - name: ZFND Mainnet
+    group: DNS Seeders
+    type: dns
+    hostname: mainnet.seeder.zfnd.org
+    port: 53
+    dns_resolve_type: A
+    dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 60
+    maxretries: 0
+    notifications: [Slack]
+    tags:
+      - { name: DNS, value: Seeder }
+      - { name: Network, value: Mainnet }
+      - { name: Org, value: ZFND }
+
+  - name: ZFND Testnet
+    group: DNS Seeders
+    type: dns
+    hostname: testnet.seeder.zfnd.org
+    port: 53
+    dns_resolve_type: A
+    dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 60
+    maxretries: 0
+    notifications: [Slack]
+    tags:
+      - { name: DNS, value: Seeder }
+      - { name: Network, value: Testnet }
+      - { name: Org, value: ZFND }
+
+  - name: ECC Mainnet
+    group: DNS Seeders
+    type: dns
+    hostname: dnsseed.z.cash
+    port: 53
+    dns_resolve_type: A
+    dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 30
+    maxretries: 3
+    notifications: [Slack]
+    tags:
+      - { name: DNS, value: Seeder }
+      - { name: Network, value: Mainnet }
+      - { name: Org, value: ECC }
+
+  - name: ECC Testnet
+    group: DNS Seeders
+    type: dns
+    hostname: dnsseed.testnet.z.cash
+    port: 53
+    dns_resolve_type: A
+    dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 30
+    maxretries: 3
+    notifications: [Slack]
+    tags:
+      - { name: DNS, value: Seeder }
+      - { name: Network, value: Testnet }
+      - { name: Org, value: ECC }
+
+  - name: Str4d Mainnet
+    group: DNS Seeders
+    type: dns
+    hostname: dnsseed.str4d.xyz
+    port: 53
+    dns_resolve_type: A
+    dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 60
+    maxretries: 0
+    notifications: [Slack]
+    tags:
+      - { name: DNS, value: Seeder }
+      - { name: Network, value: Mainnet }
+      - { name: Org, value: Community }
+
+  - name: ZFND Web Page
+    group: Web Pages
+    type: http
+    url: https://zfnd.org/
+    method: GET
+    interval: 60
+    retryInterval: 60
+    maxretries: 0
+    expiryNotification: true
+    notifications: [Slack]
+    tags:
+      - { name: Org, value: ZFND }
+
+  - name: Z.CASH Web Page
+    group: Web Pages
+    type: http
+    url: https://z.cash/
+    method: GET
+    interval: 60
+    retryInterval: 60
+    maxretries: 0
+    expiryNotification: true
+    notifications: [Slack]
+    tags:
+      - { name: Org, value: ZFND }

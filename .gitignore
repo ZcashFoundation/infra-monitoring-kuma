@@ -401,3 +401,6 @@ $RECYCLE.BIN/
 
 # Sentry Config File
 .sentryclirc
+
+# Local browser-automation capture artifacts
+.playwright-mcp/
