@@ -1,0 +1,47 @@
+meta {
+  name: Results
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/results
+  body: none
+  auth: none
+}
+
+docs {
+  Full JSON snapshot of the most recent probe cycle:
+
+    {
+      "generated_at": "...",
+      "duration_ms": 80051,
+      "results": [
+        {
+          "target": "ZFND Mainnet",
+          "hostname": "mainnet.seeder.zfnd.org",
+          "network": "mainnet",
+          "status": "UP",                       // UP | INCONCLUSIVE | DOWN(divergence) | DOWN(dns)
+          "message": "ns1...=UP(22/25) ns2...=UP(18/25) ...",
+          "nameservers": [
+            { "ns": "ns1.zfnd.org", "ns_ip": "34.70.18.81",
+              "records": 25, "live": 22, "ratio": 0.88,
+              "avg_ping_ms": 904, "status": "UP" },
+            ...
+          ]
+        }
+      ]
+    }
+
+  How to read it:
+  - status "DOWN(divergence)" on a nameserver = that backend is serving far
+    fewer live peers than its siblings -> the real fault (e.g. a stale ns1).
+  - "INCONCLUSIVE" = low liveness but no outlier; usually probe cadence, not a
+    fault. Single-nameserver seeders (ECC, str4d) can only be INCONCLUSIVE.
+  - "DOWN(dns)" = the nameserver did not answer / returned no records.
+}
+
+assert {
+  res.status: eq 200
+  res.body.results: isDefined
+}
