@@ -15,8 +15,11 @@ tags:
 notifications:
   - name: Slack
     type: slack
-    default: true          # pre-enabled for new monitors created in the UI
-    applyExisting: true     # on creation, attach to all already-existing monitors
+    # NOT default / applyExisting on purpose: those attach Slack to EVERY monitor
+    # including the group containers, so a single child event fires twice (child +
+    # group). Each leaf monitor opts in via its own `notifications: [Slack]`, so
+    # groups stay silent and you get one Down + one Up.
+    default: false
     webhookEnv: SLACK_WEBHOOK_URL
     channel: "#alerts"
     username: "Uptime Kuma"
