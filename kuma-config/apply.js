@@ -94,8 +94,21 @@ function buildSlackNotification(n) {
 
 const NOTIFICATION_BUILDERS = { slack: buildSlackNotification };
 
+// expandEnv replaces ${VAR} in the raw config with the environment value, so the
+// same kuma.yaml works across instances (e.g. the prober monitor's PROBER_BASE_URL
+// differs dev vs prod). Leaves the literal in place (and warns) if a var is unset.
+function expandEnv(text) {
+    return text.replace(/\$\{(\w+)\}/g, (literal, name) => {
+        if (process.env[name] == null) {
+            console.error(`warning: \${${name}} in config is not set in the environment`);
+            return literal;
+        }
+        return process.env[name];
+    });
+}
+
 async function main() {
-    const cfg = yaml.load(fs.readFileSync(configPath, "utf8"));
+    const cfg = yaml.load(expandEnv(fs.readFileSync(configPath, "utf8")));
     const socket = io(KUMA_URL, {
         transports: ["websocket"],
         reconnection: false,

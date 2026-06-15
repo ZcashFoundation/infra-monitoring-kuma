@@ -29,6 +29,7 @@ export KUMA_URL='https://uptime-kuma-feat-version-upgrade-2t7zoff7fq-ue.a.run.ap
 export KUMA_USERNAME='admin'
 export KUMA_PASSWORD='…'            # from 1Password
 export SLACK_WEBHOOK_URL='https://hooks.slack.com/services/…'   # optional; omit to skip Slack
+export PROBER_BASE_URL='https://dns-seeder-prober-….run.app'   # this instance's prober URL
 
 node apply.js --dry-run            # preview (connects, logs in, prints planned changes)
 node apply.js                      # apply for real
@@ -47,6 +48,7 @@ node apply.js                      # apply for real
 | `KUMA_USERNAME` | yes | — | admin user (default `admin`) |
 | `KUMA_PASSWORD` | yes | 1Password | admin password (login only; not stored anywhere) |
 | `SLACK_WEBHOOK_URL` | no | 1Password | Slack incoming webhook; omit to skip Slack |
+| `PROBER_BASE_URL` | yes* | — | DNS Seeder Prober Cloud Run URL for this instance (dev vs prod); the prober monitor's `url` expands `${PROBER_BASE_URL}/status`. *Required only because `kuma.yaml` references the prober monitor. |
 
 `kuma.yaml` references a notification's secret by **env var name**
 (`webhookEnv: SLACK_WEBHOOK_URL`) — the value is injected at apply time only and

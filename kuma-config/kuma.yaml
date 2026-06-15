@@ -117,10 +117,12 @@ monitors:
   # The real seeder health check: the prober handshakes the IPs each nameserver
   # returns and exposes 200/503 at /status (Google Front End reserves /healthz on
   # *.run.app). 503 = a nameserver is serving dead peers -> this monitor goes DOWN.
+  # PROBER_BASE_URL is the per-instance Cloud Run URL (dev vs prod), injected at
+  # apply time like the other secrets — never hardcoded here.
   - name: DNS Seeder Prober
     group: DNS Seeders
     type: http
-    url: https://dns-seeder-prober-839176955116.us-east1.run.app/status
+    url: ${PROBER_BASE_URL}/status
     method: GET
     interval: 60
     retryInterval: 60
