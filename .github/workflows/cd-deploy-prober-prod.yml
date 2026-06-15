@@ -1,0 +1,122 @@
+name: Deploy prober to prod
+
+# Dedicated pipeline for the DNS-seeder prober, prod counterpart of
+# cd-deploy-prober-dev.yml. Like the Kuma prod deploy it runs on a published
+# release (not on PR), builds the image on the runner (buildx, no Cloud Build)
+# and deploys the small always-on Cloud Run service. No DB / Cloud SQL / VPC.
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    name: Build prober image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      IMAGE: us-docker.pkg.dev/${{ vars.GCP_PROJECT }}/ecosystem-services/dns-seeder-prober
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4.1.7
+        with:
+          persist-credentials: false
+
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v4.5.0
+        with:
+          short-length: 7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.6.1
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2.1.3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF }}
+          service_account: ${{ vars.GCP_ARTIFACTS_SA }}
+          token_format: access_token
+
+      - name: Login to Google Artifact Registry
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: us-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@v6.5.0
+        with:
+          context: prober
+          file: prober/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ env.GITHUB_SHA_SHORT }}
+            ${{ env.IMAGE }}:${{ github.event.release.tag_name }}
+            ${{ env.IMAGE }}:prod
+
+  deploy:
+    name: Deploy prober to Cloud Run (prod)
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: prod
+      url: ${{ steps.deploy.outputs.url }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2.1.3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF }}
+          project_id: ${{ vars.GCP_PROJECT }}
+          service_account: ${{ vars.GCP_DEPLOYMENTS_SA }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2.1.0
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2.6.0
+        with:
+          service: dns-seeder-prober
+          image: us-docker.pkg.dev/${{ vars.GCP_PROJECT }}/ecosystem-services/dns-seeder-prober@${{ needs.build.outputs.digest }}
+          region: ${{ vars.GCP_REGION }}
+          # Always-on: the prober runs a background probe loop, so CPU must stay
+          # allocated (instance-based) and at least one instance must be warm.
+          # gen2 is required for the iterative DNS (UDP egress to root servers).
+          flags: |
+            --execution-environment=gen2
+            --min-instances=1
+            --no-cpu-throttling
+            --allow-unauthenticated
+            --port=8080
+            --memory=512Mi
+            --cpu=1
+            --timeout=300
+
+      - name: Smoke test /status
+        run: |
+          url="${{ steps.deploy.outputs.url }}"
+          for _ in 1 2 3 4 5 6; do
+            if curl -fsS "$url/status" >/dev/null; then echo "prober /status OK"; exit 0; fi
+            echo "waiting for first probe (~90s)..."; sleep 20
+          done
+          echo "::warning::/status not ready yet; the initial probe can take ~90s"
