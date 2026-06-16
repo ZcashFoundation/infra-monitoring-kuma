@@ -51,7 +51,10 @@ jobs:
       registry: ${{ vars.GAR_BASE }}
       image_digest: ${{ needs.build.outputs.image_digest }}
       min_instances: '1'
-      max_instances: '10'
+      # Pinned to 1: Uptime Kuma is stateful and each instance runs its own
+      # monitor loop. Allowing >1 makes Cloud Run autoscale under load into
+      # multiple instances that each fire notifications -> duplicate alerts.
+      max_instances: '1'
       cpu: '1'
       memory: 1Gi
       # Uptime Kuma runs a continuous background monitoring loop; keep CPU
