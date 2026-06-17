@@ -41,8 +41,22 @@ on:
         required: false
         type: string
         description: The amount of memory to use for the service
+      no_cpu_throttling:
+        required: false
+        type: boolean
+        default: false
+        description: >-
+          Allocate CPU for the full instance lifetime (instance-based billing).
+          Required for always-on workloads like Uptime Kuma, whose background
+          monitoring loop is otherwise throttled/disconnected between requests.
 
-permissions: read-all
+# NOTE: do not use `read-all`. As a reusable workflow this may not request more
+# permissions than the caller grants, and `read-all` now expands to include newer
+# scopes (artifact-metadata, code-quality, models, vulnerability-alerts) that the
+# callers don't grant -> the run is rejected at startup. Request only what's used;
+# the deploy job additionally declares `id-token: write`.
+permissions:
+  contents: read
 
 jobs:
   versioning:
@@ -87,6 +101,10 @@ jobs:
         with:
           workload_identity_provider: '${{ vars.GCP_WIF }}'
           project_id: '${{ vars.GCP_PROJECT }}'
+          # Impersonate the deployments SA (matches the build job and zebra's
+          # deploy). Without this, WIF auth has no identity to act as and the
+          # Cloud Run deploy can't authorize.
+          service_account: '${{ vars.GCP_DEPLOYMENTS_SA }}'
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2.1.0
@@ -100,9 +118,8 @@ jobs:
           region: ${{ inputs.region }}
           gcloud_component: alpha
           env_vars: |
-            REPLICA_URL=${{ vars.REPLICA_URL }}
             UPTIME_KUMA_DB_TYPE=${{ vars.UPTIME_KUMA_DB_TYPE }}
-            UPTIME_KUMA_DB_HOSTNAME=${{ vars.UPTIME_KUMA_DB_HOSTNAME   }}
+            UPTIME_KUMA_DB_HOSTNAME=${{ vars.UPTIME_KUMA_DB_HOSTNAME }}
             UPTIME_KUMA_DB_PORT=${{ vars.UPTIME_KUMA_DB_PORT }}
             UPTIME_KUMA_DB_NAME=${{ vars.UPTIME_KUMA_DB_NAME }}
             UPTIME_KUMA_DB_USERNAME=${{ vars.UPTIME_KUMA_DB_USERNAME }}
@@ -114,6 +131,7 @@ jobs:
             --max-instances=${{ inputs.max_instances }}
             --cpu=${{ inputs.cpu }}
             --memory=${{ inputs.memory }}
+            ${{ inputs.no_cpu_throttling && '--no-cpu-throttling' || '' }}
             --service-account=${{ vars.GCP_BUCKET_SA }}
             --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }}
             --add-volume=name=files,type=in-memory
