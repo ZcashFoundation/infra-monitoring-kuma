@@ -35,15 +35,15 @@ node apply.js --dry-run            # preview (connects, logs in, prints planned 
 node apply.js                      # apply for real
 ```
 
-- **Set `SLACK_WEBHOOK_URL` on the first apply.** The applier is additive and
-  matches existing entities by name: notifications attach to monitors **at
-  creation time only**. If you create monitors without the webhook and re-run
-  later with it set, the Slack notification gets created but is **not**
-  retroactively attached to the already-existing monitors — you'd end up with
-  monitors but no alerts. To fix that you'd recreate the monitors (fresh DB) or
-  attach the channel by hand in the UI.
-- Re-running never duplicates: notifications, tags, groups, and monitors are
-  matched by name (existing ones are skipped, not updated).
+- The applier is **declarative and idempotent**. Monitors are reconciled: an
+  existing monitor is updated so its declared fields match `kuma.yaml`, and the
+  declared notifications and tags are ensured-present. So if you import monitors
+  without `SLACK_WEBHOOK_URL` and re-run later with it set, Slack **is** attached
+  to the already-existing monitors on the next apply (no fresh DB / manual step
+  needed).
+- **Non-destructive:** it never removes monitors, channels, or tags that aren't
+  in the file; notifications and tags are unioned in (added, never stripped).
+  Notifications, tags, groups, and monitors are matched by name.
 
 ## Environment variables
 

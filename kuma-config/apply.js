@@ -6,8 +6,13 @@
  * it, so this speaks the Socket.IO events directly (names verified against the
  * 2.3.2 server: login / add / addNotification / getTags / addTag / addMonitorTag).
  *
- * Idempotent: notifications, tags, groups, and monitors are matched by name and
- * skipped if they already exist. Re-running is safe.
+ * Idempotent and declarative. Notifications, tags and groups are matched by name
+ * and created if missing. Monitors are reconciled: missing ones are created, and
+ * existing ones are updated so their declared fields match kuma.yaml, with the
+ * declared notifications and tags ensured-present. It is non-destructive — it
+ * never removes monitors, channels or tags that aren't in the file — so it stays
+ * additive on multi-valued state while keeping the file authoritative on fields.
+ * Re-running is safe.
  *
  * Secrets come from the environment, never from the YAML:
  *   KUMA_URL, KUMA_USERNAME, KUMA_PASSWORD  (admin login)
@@ -157,7 +162,7 @@ async function main() {
             continue;
         }
         if (n.webhookEnv && !process.env[n.webhookEnv]) {
-            log(`notification "${n.name}": ${n.webhookEnv} not set — skipping it. Monitors are created WITHOUT this channel; set ${n.webhookEnv} on the first apply, because re-running won't attach it to monitors that already exist.`);
+            log(`notification "${n.name}": ${n.webhookEnv} not set — skipping it. Monitors are created/reconciled without this channel; set ${n.webhookEnv} and re-run to attach it (reconcile wires it onto existing monitors too).`);
             continue;
         }
         const builder = NOTIFICATION_BUILDERS[n.type];
@@ -208,31 +213,58 @@ async function main() {
             log(`monitor "${m.name}": ${unresolved[0]} not set in env — skip`);
             continue;
         }
-        if (existingMonitors.has(m.name)) {
-            log(`monitor "${m.name}" exists — skip`);
-            continue;
-        }
         const { group, notifications, tags, ...fields } = m;
-        const notificationIDList = {};
+        const wantNotifs = {};
         for (const nn of notifications || []) {
-            if (notifIds[nn] != null) notificationIDList[notifIds[nn]] = true;
+            if (notifIds[nn] != null) wantNotifs[notifIds[nn]] = true;
         }
-        const payload = {
+        const declared = {
             ...MONITOR_DEFAULTS,
             ...fields,
             parent: group ? groupIds[group] ?? null : null,
-            notificationIDList,
+            notificationIDList: wantNotifs,
         };
-        if (DRY_RUN) {
-            log(`[dry-run] create monitor "${m.name}" (${m.type}) under "${group || "-"}" tags=${(tags || []).map((t) => t.name + ":" + t.value).join(",")}`);
-            continue;
+
+        const existing = existingMonitors.get(m.name);
+        let monitorID;
+        let existingTags = (existing && existing.tags) || [];
+        if (existing) {
+            // Reconcile in place: declared fields win, notifications are unioned
+            // in (never removed). Round-trip the full monitor via getMonitor so we
+            // only change what we declare and keep everything else intact. Leaf
+            // monitors only — groups never get notifications (avoids double-notify).
+            monitorID = existing.id;
+            if (DRY_RUN) {
+                log(`[dry-run] reconcile monitor "${m.name}" (id=${monitorID})`);
+            } else {
+                const full = (await emit("getMonitor", monitorID))?.monitor || existing;
+                existingTags = full.tags || existingTags;
+                await emit("editMonitor", {
+                    ...full,
+                    ...declared,
+                    id: monitorID,
+                    notificationIDList: { ...(full.notificationIDList || {}), ...wantNotifs },
+                });
+                log(`reconciled monitor "${m.name}" (id=${monitorID})`);
+            }
+        } else {
+            if (DRY_RUN) {
+                log(`[dry-run] create monitor "${m.name}" (${m.type}) under "${group || "-"}" tags=${(tags || []).map((t) => t.name + ":" + t.value).join(",")}`);
+                continue;
+            }
+            const res = await emit("add", declared);
+            monitorID = res.monitorID;
+            log(`created monitor "${m.name}" (id=${monitorID})`);
         }
-        const res = await emit("add", payload);
-        const monitorID = res.monitorID;
-        log(`created monitor "${m.name}" (id=${monitorID})`);
+
+        if (DRY_RUN) continue;
+
+        // Ensure declared tags are present (additive — never removes tags).
+        const haveTags = new Set(existingTags.map((t) => `${t.name}:${t.value || ""}`));
         for (const t of tags || []) {
             const tagID = tagIds[t.name];
             if (tagID == null) { log(`  ! unknown tag "${t.name}" — skip`); continue; }
+            if (haveTags.has(`${t.name}:${t.value || ""}`)) continue;
             await emit("addMonitorTag", tagID, monitorID, t.value || "");
             log(`  + tag ${t.name}=${t.value}`);
         }
