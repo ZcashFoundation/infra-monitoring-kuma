@@ -26,7 +26,12 @@ const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
 const configPath = (() => {
     const i = args.indexOf("--config");
-    return i >= 0 ? args[i + 1] : path.join(__dirname, "kuma.yaml");
+    if (i === -1) return path.join(__dirname, "kuma.yaml");
+    if (!args[i + 1]) {
+        console.error("error: --config requires a path argument");
+        process.exit(2);
+    }
+    return args[i + 1];
 })();
 
 const KUMA_URL = requireEnv("KUMA_URL");
@@ -96,15 +101,13 @@ const NOTIFICATION_BUILDERS = { slack: buildSlackNotification };
 
 // expandEnv replaces ${VAR} in the raw config with the environment value, so the
 // same kuma.yaml works across instances (e.g. the prober monitor's PROBER_BASE_URL
-// differs dev vs prod). Leaves the literal in place (and warns) if a var is unset.
+// differs dev vs prod). Unset vars are left as literals on purpose: a monitor that
+// still carries an unexpanded ${VAR} is skipped at creation (see the monitor loop)
+// rather than created with an invalid value — this lets the prober monitor be
+// added later (Phase 2) without blocking the rest of the apply.
 function expandEnv(text) {
-    return text.replace(/\$\{(\w+)\}/g, (literal, name) => {
-        if (process.env[name] == null) {
-            console.error(`warning: \${${name}} in config is not set in the environment`);
-            return literal;
-        }
-        return process.env[name];
-    });
+    return text.replace(/\$\{(\w+)\}/g, (literal, name) =>
+        process.env[name] != null ? process.env[name] : literal);
 }
 
 async function main() {
@@ -154,7 +157,7 @@ async function main() {
             continue;
         }
         if (n.webhookEnv && !process.env[n.webhookEnv]) {
-            log(`notification "${n.name}": ${n.webhookEnv} not set — skipping for now (monitors still import; re-run after adding the secret)`);
+            log(`notification "${n.name}": ${n.webhookEnv} not set — skipping it. Monitors are created WITHOUT this channel; set ${n.webhookEnv} on the first apply, because re-running won't attach it to monitors that already exist.`);
             continue;
         }
         const builder = NOTIFICATION_BUILDERS[n.type];
@@ -197,6 +200,14 @@ async function main() {
 
     // 4. Monitors
     for (const m of cfg.monitors || []) {
+        // Skip monitors whose ${VAR} placeholders weren't resolved (e.g. the
+        // prober monitor before PROBER_BASE_URL is set) so we never create a
+        // monitor with an invalid value. Set the env var to include it.
+        const unresolved = JSON.stringify(m).match(/\$\{\w+\}/);
+        if (unresolved) {
+            log(`monitor "${m.name}": ${unresolved[0]} not set in env — skip`);
+            continue;
+        }
         if (existingMonitors.has(m.name)) {
             log(`monitor "${m.name}" exists — skip`);
             continue;

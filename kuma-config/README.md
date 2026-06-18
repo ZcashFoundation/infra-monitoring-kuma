@@ -25,7 +25,7 @@ provision for this. The only Secret Manager entry related to Kuma is
 ```sh
 npm install
 
-export KUMA_URL='https://uptime-kuma-feat-version-upgrade-2t7zoff7fq-ue.a.run.app'
+export KUMA_URL='https://<your-kuma-instance>/'   # the instance you intend to apply to (dev vs prod!)
 export KUMA_USERNAME='admin'
 export KUMA_PASSWORD='…'            # from 1Password
 export SLACK_WEBHOOK_URL='https://hooks.slack.com/services/…'   # optional; omit to skip Slack
@@ -35,10 +35,15 @@ node apply.js --dry-run            # preview (connects, logs in, prints planned 
 node apply.js                      # apply for real
 ```
 
-- Omitting `SLACK_WEBHOOK_URL` imports the monitors and skips the Slack channel;
-  re-run later with it set to add Slack (idempotent — only creates what's missing).
+- **Set `SLACK_WEBHOOK_URL` on the first apply.** The applier is additive and
+  matches existing entities by name: notifications attach to monitors **at
+  creation time only**. If you create monitors without the webhook and re-run
+  later with it set, the Slack notification gets created but is **not**
+  retroactively attached to the already-existing monitors — you'd end up with
+  monitors but no alerts. To fix that you'd recreate the monitors (fresh DB) or
+  attach the channel by hand in the UI.
 - Re-running never duplicates: notifications, tags, groups, and monitors are
-  matched by name.
+  matched by name (existing ones are skipped, not updated).
 
 ## Environment variables
 
