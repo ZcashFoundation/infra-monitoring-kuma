@@ -115,5 +115,5 @@ when a network upgrade raises the protocol-version floor.
 ## Status / deferred
 
 Standalone (logs + JSON + exit code). Not yet wired: Uptime Kuma Push
-integration and Cloud Run Job deployment — see the repo plan and
+integration and Cloud Run Job deployment — see the repository plan and
 [`../docs/dns-seeder-resilience.md`](../docs/dns-seeder-resilience.md).
