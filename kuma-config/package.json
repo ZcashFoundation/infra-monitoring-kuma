@@ -1,0 +1,14 @@
+{
+  "name": "kuma-config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Declarative config-as-code for Uptime Kuma 2.x (monitors + notifications) via Socket.IO.",
+  "type": "commonjs",
+  "scripts": {
+    "apply": "node apply.js"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "socket.io-client": "^4.7.5"
+  }
+}

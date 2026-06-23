@@ -1,0 +1,118 @@
+{
+  "_meta": {
+    "source": "status.zfnd.org (production, Gustavo's nightly2 fork)",
+    "captured_at": "2026-05-28",
+    "captured_via": "Vue root component data.monitorList (no Backup/Import route in this build)",
+    "note": "dns_last_result values are point-in-time and not config; kept for reference of what each seeder was returning at capture time."
+  },
+  "monitors": [
+    {
+      "id": 3,
+      "name": "DNS Seeders",
+      "type": "group",
+      "parent": null,
+      "childrenIDs": [2, 4, 5, 6, 7]
+    },
+    {
+      "id": 2,
+      "name": "ZFND Testnet",
+      "type": "dns",
+      "parent": 3,
+      "hostname": "testnet.seeder.zfnd.org",
+      "port": 53,
+      "dns_resolve_type": "A",
+      "dns_resolve_server": "1.1.1.1",
+      "interval": 60,
+      "retryInterval": 60,
+      "maxretries": 0,
+      "accepted_statuscodes": ["200-299"],
+      "conditions": null,
+      "tags": [{"name": "DNS", "value": "Seeder"}, {"name": "Network", "value": "Testnet"}, {"name": "Org", "value": "ZFND"}]
+    },
+    {
+      "id": 4,
+      "name": "ZFND Mainnet",
+      "type": "dns",
+      "parent": 3,
+      "hostname": "mainnet.seeder.zfnd.org",
+      "port": 53,
+      "dns_resolve_type": "A",
+      "dns_resolve_server": "1.1.1.1",
+      "interval": 60,
+      "retryInterval": 60,
+      "maxretries": 0,
+      "accepted_statuscodes": ["200-299"],
+      "conditions": null,
+      "tags": [{"name": "DNS", "value": "Seeder"}, {"name": "Network", "value": "Mainnet"}, {"name": "Org", "value": "ZFND"}]
+    },
+    {
+      "id": 5,
+      "name": "ECC Mainnet",
+      "type": "dns",
+      "parent": 3,
+      "hostname": "dnsseed.z.cash",
+      "port": 53,
+      "dns_resolve_type": "A",
+      "dns_resolve_server": "1.1.1.1",
+      "interval": 60,
+      "retryInterval": 30,
+      "maxretries": 3,
+      "accepted_statuscodes": ["200-299"],
+      "conditions": null,
+      "tags": [{"name": "DNS", "value": "Seeder"}, {"name": "Network", "value": "Mainnet"}, {"name": "Org", "value": "ECC"}]
+    },
+    {
+      "id": 6,
+      "name": "ECC Testnet",
+      "type": "dns",
+      "parent": 3,
+      "hostname": "dnsseed.testnet.z.cash",
+      "port": 53,
+      "dns_resolve_type": "A",
+      "dns_resolve_server": "1.1.1.1",
+      "interval": 60,
+      "retryInterval": 30,
+      "maxretries": 3,
+      "accepted_statuscodes": ["200-299"],
+      "conditions": null,
+      "tags": [{"name": "DNS", "value": "Seeder"}, {"name": "Network", "value": "Testnet"}, {"name": "Org", "value": "ECC"}]
+    },
+    {
+      "id": 7,
+      "name": "Str4d Mainnet",
+      "type": "dns",
+      "parent": 3,
+      "hostname": "dnsseed.str4d.xyz",
+      "port": 53,
+      "dns_resolve_type": "A",
+      "dns_resolve_server": "1.1.1.1",
+      "interval": 60,
+      "retryInterval": 60,
+      "maxretries": 0,
+      "accepted_statuscodes": ["200-299"],
+      "conditions": null,
+      "tags": [{"name": "DNS", "value": "Seeder"}, {"name": "Network", "value": "Mainnet"}, {"name": "Org", "value": "Community"}]
+    },
+    {
+      "id": 8,
+      "name": "Web Pages",
+      "type": "group",
+      "parent": null,
+      "childrenIDs": [9]
+    },
+    {
+      "id": 9,
+      "name": "ZFND Web Page",
+      "type": "http",
+      "parent": 8,
+      "url": "https://zfnd.org/",
+      "method": "GET",
+      "interval": 60,
+      "retryInterval": 60,
+      "maxretries": 0,
+      "accepted_statuscodes": ["200-299"],
+      "expiryNotification": true,
+      "tags": [{"name": "Org", "value": "ZFND"}]
+    }
+  ]
+}
