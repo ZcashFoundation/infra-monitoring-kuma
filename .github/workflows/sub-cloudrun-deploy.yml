@@ -49,6 +49,11 @@ on:
           Allocate CPU for the full instance lifetime (instance-based billing).
           Required for always-on workloads like Uptime Kuma, whose background
           monitoring loop is otherwise throttled/disconnected between requests.
+      ingress:
+        required: false
+        type: string
+        default: all
+        description: Cloud Run ingress (all | internal-and-cloud-load-balancing).
 
 # NOTE: do not use `read-all`. As a reusable workflow this may not request more
 # permissions than the caller grants, and `read-all` now expands to include newer
@@ -132,6 +137,7 @@ jobs:
             --cpu=${{ inputs.cpu }}
             --memory=${{ inputs.memory }}
             ${{ inputs.no_cpu_throttling && '--no-cpu-throttling' || '' }}
+            --ingress=${{ inputs.ingress }}
             --service-account=${{ vars.GCP_BUCKET_SA }}
             --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }}
             --add-volume=name=files,type=in-memory
@@ -139,11 +145,13 @@ jobs:
             --network=${{ vars.GCP_NETWORK }}
             --subnet=${{ vars.GCP_SUBNETWORK }}
 
+      # Required even with internal ingress: the LB invokes Cloud Run unauthenticated.
       - name: Allow unauthenticated calls to the service
-        if: ${{ inputs.environment != 'prod' }}
         run: |
           gcloud run services add-iam-policy-binding ${{ inputs.app_name }}-${{ needs.versioning.outputs.version || env.GITHUB_HEAD_REF_SLUG || inputs.environment }} \
           --region=${{ inputs.region }} --member=allUsers --role=roles/run.invoker --quiet
 
+      # The *.run.app URL is closed under internal ingress.
       - name: Test service with cURL
+        if: ${{ inputs.ingress == 'all' }}
         run: curl "${{ steps.deploy.outputs.url }}"

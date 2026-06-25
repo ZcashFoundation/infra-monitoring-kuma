@@ -60,4 +60,6 @@ jobs:
       # Uptime Kuma runs a continuous background monitoring loop; keep CPU
       # always allocated so prod isn't throttled/disconnected between requests.
       no_cpu_throttling: true
+      # LB-only (status.zfnd.org); direct *.run.app URL closed.
+      ingress: internal-and-cloud-load-balancing
     secrets: inherit
