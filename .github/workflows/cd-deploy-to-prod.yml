@@ -62,4 +62,5 @@ jobs:
       no_cpu_throttling: true
       # LB-only (status.zfnd.org); direct *.run.app URL closed.
       ingress: internal-and-cloud-load-balancing
+      public_url: https://status.zfnd.org
     secrets: inherit

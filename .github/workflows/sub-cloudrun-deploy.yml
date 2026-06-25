@@ -54,6 +54,11 @@ on:
         type: string
         default: all
         description: Cloud Run ingress (all | internal-and-cloud-load-balancing).
+      public_url:
+        required: false
+        type: string
+        default: ''
+        description: External URL (e.g. the LB domain) used for the Environment URL and smoke test when the *.run.app URL is closed.
 
 # NOTE: do not use `read-all`. As a reusable workflow this may not request more
 # permissions than the caller grants, and `read-all` now expands to include newer
@@ -88,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
-      url: ${{ steps.deploy.outputs.url }}
+      url: ${{ inputs.public_url || steps.deploy.outputs.url }}
     permissions:
       contents: read
       id-token: write
@@ -151,7 +156,7 @@ jobs:
           gcloud run services add-iam-policy-binding ${{ inputs.app_name }}-${{ needs.versioning.outputs.version || env.GITHUB_HEAD_REF_SLUG || inputs.environment }} \
           --region=${{ inputs.region }} --member=allUsers --role=roles/run.invoker --quiet
 
-      # The *.run.app URL is closed under internal ingress.
+      # Use the public URL (LB) when the *.run.app URL is closed under internal ingress.
       - name: Test service with cURL
-        if: ${{ inputs.ingress == 'all' }}
-        run: curl "${{ steps.deploy.outputs.url }}"
+        if: ${{ inputs.public_url != '' || inputs.ingress == 'all' }}
+        run: curl --retry 5 --retry-all-errors -fsSL "${{ inputs.public_url || steps.deploy.outputs.url }}" -o /dev/null
