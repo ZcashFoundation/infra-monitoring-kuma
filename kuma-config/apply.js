@@ -53,13 +53,14 @@ function requireEnv(name) {
 }
 
 // Fields the `add` handler JSON-stringifies or requires, plus sensible defaults.
-// Per-monitor YAML overrides are merged on top of these.
+// Per-monitor YAML overrides are merged on top of these. retries=3 + 20s timeout
+// require a sustained failure (~60s) before Down, filtering transient blips.
 const MONITOR_DEFAULTS = {
     interval: 60,
-    retryInterval: 60,
+    retryInterval: 20,
     resendInterval: 0,
-    maxretries: 0,
-    timeout: 48,
+    maxretries: 3,
+    timeout: 20,
     method: "GET",
     accepted_statuscodes: ["200-299"],
     conditions: [],

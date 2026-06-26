@@ -41,9 +41,6 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
-    interval: 60
-    retryInterval: 60
-    maxretries: 0
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -57,9 +54,6 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
-    interval: 60
-    retryInterval: 60
-    maxretries: 0
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -73,9 +67,6 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
-    interval: 60
-    retryInterval: 30
-    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -89,9 +80,6 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
-    interval: 60
-    retryInterval: 30
-    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -105,9 +93,6 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
-    interval: 60
-    retryInterval: 60
-    maxretries: 0
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -124,9 +109,6 @@ monitors:
     type: http
     url: ${PROBER_BASE_URL}/status
     method: GET
-    interval: 60
-    retryInterval: 60
-    maxretries: 1
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -136,9 +118,6 @@ monitors:
     type: http
     url: https://zfnd.org/
     method: GET
-    interval: 60
-    retryInterval: 60
-    maxretries: 0
     expiryNotification: true
     notifications: [Slack]
     tags:
@@ -149,9 +128,6 @@ monitors:
     type: http
     url: https://z.cash/
     method: GET
-    interval: 60
-    retryInterval: 60
-    maxretries: 0
     expiryNotification: true
     notifications: [Slack]
     tags:
