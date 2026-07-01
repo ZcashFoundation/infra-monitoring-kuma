@@ -1,0 +1,53 @@
+name: Apply Kuma config
+
+# Reconciles kuma-config/ onto the prod Kuma (status.zfnd.org) on merge to main.
+# apply.js is declarative and non-destructive. Manual re-run via workflow_dispatch.
+# Auth: WIF (keyless) -> a least-privilege SA that reads the admin/webhook secrets
+# from Secret Manager. No secrets are stored in GitHub.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'kuma-config/**'
+  workflow_dispatch:
+
+concurrency:
+  group: apply-kuma-config
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4.1.7
+        with:
+          persist-credentials: false
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2.1.3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF }}
+          service_account: ${{ vars.GCP_KUMA_APPLIER_SA }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2.1.0
+
+      - uses: actions/setup-node@v4.0.3
+        with:
+          node-version: '20'
+
+      - name: Apply config-as-code
+        working-directory: kuma-config
+        env:
+          KUMA_URL: ${{ vars.KUMA_PUBLIC_URL }}
+          KUMA_USERNAME: ${{ vars.KUMA_USERNAME }}
+        run: |
+          export KUMA_PASSWORD="$(gcloud secrets versions access latest --secret=UPTIME_KUMA_ADMIN_PASSWORD --project=${{ vars.GCP_PROJECT }})"
+          export SLACK_WEBHOOK_URL="$(gcloud secrets versions access latest --secret=SLACK_WEBHOOK_URL --project=${{ vars.GCP_PROJECT }})"
+          npm ci
+          node apply.js
