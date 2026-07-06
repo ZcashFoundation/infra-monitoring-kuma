@@ -66,13 +66,25 @@ Merging a change under `kuma-config/` to `main` runs
 reconciles the prod Kuma at `status.zfnd.org`. Re-run manually from the Actions
 tab (`workflow_dispatch`).
 
-Secrets are **not** stored in GitHub. The job authenticates with **Workload
-Identity Federation** (keyless) as a least-privilege SA (`kuma-config-applier`)
-that holds only `secretAccessor` on the two secrets it reads, and pulls
-`UPTIME_KUMA_ADMIN_PASSWORD` + `SLACK_WEBHOOK_URL` from **Secret Manager** at run
-time — single source of truth, one rotation point. GitHub only holds non-secret
-`prod` vars: `KUMA_PUBLIC_URL` (the workflow maps it to `apply.js`'s `KUMA_URL`)
-and `KUMA_USERNAME`.
+**No secrets live in GitHub.** The job authenticates with keyless **Workload
+Identity Federation** as a least-privilege service account (`kuma-config-applier`,
+which holds only `secretAccessor` on the two secrets it reads) and pulls the admin
+password and Slack webhook from **Secret Manager** at run time — one source of
+truth, one rotation point.
+
+To operate it, the `prod` GitHub environment provides these non-secret
+**variables** (secret *values* stay in Secret Manager):
+
+| Variable | Purpose |
+|---|---|
+| `KUMA_PUBLIC_URL` | Kuma instance URL, mapped to `apply.js`'s `KUMA_URL` |
+| `KUMA_USERNAME` | Kuma admin username |
+| `GCP_PROJECT` | GCP project that holds the secrets |
+| `GCP_WIF` | Workload Identity provider (keyless auth) |
+| `GCP_KUMA_APPLIER_SA` | Service account the job impersonates |
+
+Secrets read from Secret Manager (never GitHub): `UPTIME_KUMA_ADMIN_PASSWORD`,
+`SLACK_WEBHOOK_URL`.
 
 ## Adding channels later
 
