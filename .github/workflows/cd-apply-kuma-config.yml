@@ -23,6 +23,7 @@ jobs:
   apply:
     runs-on: ubuntu-latest
     environment: prod
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4.1.7
         with:
@@ -33,6 +34,7 @@ jobs:
         with:
           workload_identity_provider: ${{ vars.GCP_WIF }}
           service_account: ${{ vars.GCP_KUMA_APPLIER_SA }}
+          project_id: ${{ vars.GCP_PROJECT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2.1.0
@@ -46,8 +48,12 @@ jobs:
         env:
           KUMA_URL: ${{ vars.KUMA_PUBLIC_URL }}
           KUMA_USERNAME: ${{ vars.KUMA_USERNAME }}
+          GCP_PROJECT: ${{ vars.GCP_PROJECT }}
         run: |
-          export KUMA_PASSWORD="$(gcloud secrets versions access latest --secret=UPTIME_KUMA_ADMIN_PASSWORD --project=${{ vars.GCP_PROJECT }})"
-          export SLACK_WEBHOOK_URL="$(gcloud secrets versions access latest --secret=SLACK_WEBHOOK_URL --project=${{ vars.GCP_PROJECT }})"
+          KUMA_PASSWORD="$(gcloud secrets versions access latest --secret=UPTIME_KUMA_ADMIN_PASSWORD --project="$GCP_PROJECT")"
+          SLACK_WEBHOOK_URL="$(gcloud secrets versions access latest --secret=SLACK_WEBHOOK_URL --project="$GCP_PROJECT")"
+          echo "::add-mask::$KUMA_PASSWORD"
+          echo "::add-mask::$SLACK_WEBHOOK_URL"
+          export KUMA_PASSWORD SLACK_WEBHOOK_URL
           npm ci
           node apply.js

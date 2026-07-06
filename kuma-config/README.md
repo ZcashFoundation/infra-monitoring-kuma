@@ -63,7 +63,7 @@ never written to git.
 
 Merging a change under `kuma-config/` to `main` runs
 [`cd-apply-kuma-config.yml`](../.github/workflows/cd-apply-kuma-config.yml), which
-reconciles the prod Kuma over `status.zfnd.org`. Re-run manually from the Actions
+reconciles the prod Kuma at `status.zfnd.org`. Re-run manually from the Actions
 tab (`workflow_dispatch`).
 
 Secrets are **not** stored in GitHub. The job authenticates with **Workload
@@ -71,7 +71,8 @@ Identity Federation** (keyless) as a least-privilege SA (`kuma-config-applier`)
 that holds only `secretAccessor` on the two secrets it reads, and pulls
 `UPTIME_KUMA_ADMIN_PASSWORD` + `SLACK_WEBHOOK_URL` from **Secret Manager** at run
 time — single source of truth, one rotation point. GitHub only holds non-secret
-`prod` vars: `KUMA_PUBLIC_URL`, `KUMA_USERNAME`.
+`prod` vars: `KUMA_PUBLIC_URL` (the workflow maps it to `apply.js`'s `KUMA_URL`)
+and `KUMA_USERNAME`.
 
 ## Adding channels later
 
