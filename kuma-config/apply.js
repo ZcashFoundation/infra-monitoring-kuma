@@ -61,7 +61,7 @@ const MONITOR_DEFAULTS = {
     retryInterval: 20,
     resendInterval: 0,
     maxretries: 3,
-    timeout: 20,
+    timeout: 15,
     method: "GET",
     accepted_statuscodes: ["200-299"],
     conditions: [],
