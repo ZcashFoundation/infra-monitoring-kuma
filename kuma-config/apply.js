@@ -53,9 +53,10 @@ function requireEnv(name) {
 }
 
 // Fields the `add` handler JSON-stringifies or requires, plus sensible defaults.
-// Per-monitor YAML overrides are merged on top of these. maxretries + a short
-// timeout require a sustained failure (not a one-off blip) before Down, which
-// filters the transient timeouts that were firing false alerts.
+// Per-monitor YAML overrides are merged on top of these. maxretries makes Down
+// require several consecutive failures (not a one-off blip) — that's what filters
+// the transient timeouts that fired false alerts; the shorter timeout only caps
+// how long each attempt waits.
 const MONITOR_DEFAULTS = {
     interval: 60,
     retryInterval: 20,
