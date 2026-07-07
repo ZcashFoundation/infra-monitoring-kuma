@@ -24,6 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     timeout-minutes: 10
+    # Only ever reconcile prod from main — a workflow_dispatch on a feature branch
+    # must not apply unmerged kuma-config to prod.
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4.1.7
         with:
@@ -50,6 +53,7 @@ jobs:
           KUMA_USERNAME: ${{ vars.KUMA_USERNAME }}
           GCP_PROJECT: ${{ vars.GCP_PROJECT }}
         run: |
+          set -euo pipefail
           KUMA_PASSWORD="$(gcloud secrets versions access latest --secret=UPTIME_KUMA_ADMIN_PASSWORD --project="$GCP_PROJECT")"
           SLACK_WEBHOOK_URL="$(gcloud secrets versions access latest --secret=SLACK_WEBHOOK_URL --project="$GCP_PROJECT")"
           echo "::add-mask::$KUMA_PASSWORD"
