@@ -59,11 +59,32 @@ node apply.js                      # apply for real
 (`webhookEnv: SLACK_WEBHOOK_URL`) — the value is injected at apply time only and
 never written to git.
 
-## If we ever automate this in CI
+## Pipeline (prod)
 
-Wire a job that runs `node apply.js` and injects the same env vars from GitHub
-Actions secrets (or Secret Manager). That's the point at which a managed secret
-would make sense — not for the current local/manual flow.
+Merging a change under `kuma-config/` to `main` runs
+[`cd-apply-kuma-config.yml`](../.github/workflows/cd-apply-kuma-config.yml), which
+reconciles the prod Kuma at `status.zfnd.org`. Re-run manually from the Actions
+tab (`workflow_dispatch`).
+
+**No secrets live in GitHub.** The job authenticates with keyless **Workload
+Identity Federation** as a least-privilege service account (`kuma-config-applier`,
+which holds only `secretAccessor` on the two secrets it reads) and pulls the admin
+password and Slack webhook from **Secret Manager** at run time — one source of
+truth, one rotation point.
+
+To operate it, the `prod` GitHub environment provides these non-secret
+**variables** (secret *values* stay in Secret Manager):
+
+| Variable | Purpose |
+|---|---|
+| `KUMA_PUBLIC_URL` | Kuma instance URL, mapped to `apply.js`'s `KUMA_URL` |
+| `KUMA_USERNAME` | Kuma admin username |
+| `GCP_PROJECT` | GCP project that holds the secrets |
+| `GCP_WIF` | Workload Identity provider (keyless auth) |
+| `GCP_KUMA_APPLIER_SA` | Service account the job impersonates |
+
+Secrets read from Secret Manager (never GitHub): `UPTIME_KUMA_ADMIN_PASSWORD`,
+`SLACK_WEBHOOK_URL`.
 
 ## Adding channels later
 
