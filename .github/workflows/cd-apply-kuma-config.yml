@@ -33,14 +33,14 @@ jobs:
           persist-credentials: false
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2.1.3
+        uses: google-github-actions/auth@v3.0.0
         with:
           workload_identity_provider: ${{ vars.GCP_WIF }}
           service_account: ${{ vars.GCP_KUMA_APPLIER_SA }}
           project_id: ${{ vars.GCP_PROJECT }}
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2.1.0
+        uses: google-github-actions/setup-gcloud@v3.0.1
 
       - uses: actions/setup-node@v4.0.3
         with:
