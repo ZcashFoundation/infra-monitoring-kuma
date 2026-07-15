@@ -31,8 +31,10 @@ groups:
   - DNS Seeders
   - Web Pages
 
-# Monitors. `group` nests under a group; `notifications` attaches channels;
-# `tags` are [{name, value}] pairs (colour comes from the tags map above).
+# Monitors. Each declares its own interval/retries so the desired state is
+# explicit here, not hidden in defaults. `timeout` only affects HTTP monitors —
+# Kuma ignores it for DNS, so the DNS ones omit it. `group` nests under a group;
+# `notifications` attaches channels; `tags` are [{name, value}] pairs.
 monitors:
   - name: ZFND Mainnet
     group: DNS Seeders
@@ -41,6 +43,9 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -54,6 +59,9 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -67,6 +75,9 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -80,6 +91,9 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -93,6 +107,9 @@ monitors:
     port: 53
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -109,6 +126,10 @@ monitors:
     type: http
     url: ${PROBER_BASE_URL}/status
     method: GET
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -118,6 +139,10 @@ monitors:
     type: http
     url: https://zfnd.org/
     method: GET
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
     expiryNotification: true
     notifications: [Slack]
     tags:
@@ -128,6 +153,10 @@ monitors:
     type: http
     url: https://z.cash/
     method: GET
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
     expiryNotification: true
     notifications: [Slack]
     tags:
