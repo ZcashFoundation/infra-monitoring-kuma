@@ -53,13 +53,17 @@ function requireEnv(name) {
 }
 
 // Fields the `add` handler JSON-stringifies or requires, plus sensible defaults.
-// Per-monitor YAML overrides are merged on top of these.
+// Merged into every monitor payload (per-monitor YAML overrides win). maxretries
+// makes Down require several consecutive failures (not a one-off blip) — that's
+// what filters the transient timeouts that fired false alerts. timeout only
+// affects HTTP checks (Kuma ignores it for DNS) and is kept < retryInterval so
+// each attempt finishes before the next retry.
 const MONITOR_DEFAULTS = {
     interval: 60,
-    retryInterval: 60,
+    retryInterval: 20,
     resendInterval: 0,
-    maxretries: 0,
-    timeout: 48,
+    maxretries: 3,
+    timeout: 15,
     method: "GET",
     accepted_statuscodes: ["200-299"],
     conditions: [],

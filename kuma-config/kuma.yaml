@@ -31,8 +31,11 @@ groups:
   - DNS Seeders
   - Web Pages
 
-# Monitors. `group` nests under a group; `notifications` attaches channels;
-# `tags` are [{name, value}] pairs (colour comes from the tags map above).
+# Monitors. Each declares its own interval/retries so the desired state is
+# explicit here, not hidden in defaults. DNS monitors don't declare `timeout`
+# because Kuma only uses it for HTTP checks (the applier still sends the default,
+# harmlessly). `group` nests under a group; `notifications` attaches channels;
+# `tags` are [{name, value}] pairs.
 monitors:
   - name: ZFND Mainnet
     group: DNS Seeders
@@ -42,8 +45,8 @@ monitors:
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
     interval: 60
-    retryInterval: 60
-    maxretries: 0
+    retryInterval: 20
+    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -58,8 +61,8 @@ monitors:
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
     interval: 60
-    retryInterval: 60
-    maxretries: 0
+    retryInterval: 20
+    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -74,7 +77,7 @@ monitors:
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
     interval: 60
-    retryInterval: 30
+    retryInterval: 20
     maxretries: 3
     notifications: [Slack]
     tags:
@@ -90,7 +93,7 @@ monitors:
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
     interval: 60
-    retryInterval: 30
+    retryInterval: 20
     maxretries: 3
     notifications: [Slack]
     tags:
@@ -106,8 +109,8 @@ monitors:
     dns_resolve_type: A
     dns_resolve_server: 1.1.1.1
     interval: 60
-    retryInterval: 60
-    maxretries: 0
+    retryInterval: 20
+    maxretries: 3
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -125,8 +128,9 @@ monitors:
     url: ${PROBER_BASE_URL}/status
     method: GET
     interval: 60
-    retryInterval: 60
-    maxretries: 1
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
     notifications: [Slack]
     tags:
       - { name: DNS, value: Seeder }
@@ -137,8 +141,9 @@ monitors:
     url: https://zfnd.org/
     method: GET
     interval: 60
-    retryInterval: 60
-    maxretries: 0
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
     expiryNotification: true
     notifications: [Slack]
     tags:
@@ -150,8 +155,9 @@ monitors:
     url: https://z.cash/
     method: GET
     interval: 60
-    retryInterval: 60
-    maxretries: 0
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
     expiryNotification: true
     notifications: [Slack]
     tags:
