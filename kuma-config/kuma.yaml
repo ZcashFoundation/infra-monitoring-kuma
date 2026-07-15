@@ -32,9 +32,10 @@ groups:
   - Web Pages
 
 # Monitors. Each declares its own interval/retries so the desired state is
-# explicit here, not hidden in defaults. `timeout` only affects HTTP monitors —
-# Kuma ignores it for DNS, so the DNS ones omit it. `group` nests under a group;
-# `notifications` attaches channels; `tags` are [{name, value}] pairs.
+# explicit here, not hidden in defaults. DNS monitors don't declare `timeout`
+# because Kuma only uses it for HTTP checks (the applier still sends the default,
+# harmlessly). `group` nests under a group; `notifications` attaches channels;
+# `tags` are [{name, value}] pairs.
 monitors:
   - name: ZFND Mainnet
     group: DNS Seeders
