@@ -30,4 +30,12 @@ jobs:
 
       - name: Removing CR service
         run: |
-          gcloud run services delete ${{ vars.APP_NAME }}-${{ env.GITHUB_HEAD_REF_SLUG || env.GITHUB_REF_SLUG }} --region=${{ vars.GCP_REGION }} --quiet
+          svc="${{ vars.APP_NAME }}-${{ env.GITHUB_HEAD_REF_SLUG || env.GITHUB_REF_SLUG }}"
+          # Only branches that deployed a preview Kuma have a service; skip the rest
+          # (config/dependabot PRs, branch deletes) instead of failing on "not found".
+          if gcloud run services describe "$svc" --region="${{ vars.GCP_REGION }}" >/dev/null 2>&1; then
+            gcloud run services delete "$svc" --region="${{ vars.GCP_REGION }}" --quiet
+            echo "deleted $svc"
+          else
+            echo "no dev service '$svc' — nothing to clean"
+          fi
