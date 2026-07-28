@@ -89,6 +89,81 @@ func TestUniformLowIsInconclusive(t *testing.T) {
 	}
 }
 
+// TestUniformZeroIsHardDown draws the line against TestUniformLowIsInconclusive
+// above: uniformly *low* is a cooldown artifact and stays soft, but uniformly
+// *zero* is not something cooldown produces across independent nameservers. It
+// means this side cannot handshake anything — the shape seen when the prober's
+// advertised protocol version fell behind the seeder's floor and every modern
+// peer refused it. Classified soft, that returned 0 live fleet-wide with
+// /healthz still 200, so it has to be a hard down.
+func TestUniformZeroIsHardDown(t *testing.T) {
+	nsList := []NS{{Name: "ns1", IP: "10.0.0.1"}, {Name: "ns2", IP: "10.0.0.2"}}
+	set := ips("1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4", "5.5.5.5", "6.6.6.6")
+	p := testProber(
+		// Records resolve fine; not one peer completes a handshake.
+		func(string, []net.IP, int) (map[string]time.Duration, error) {
+			return map[string]time.Duration{}, nil
+		},
+		func(string, time.Duration) ([]NS, error) { return nsList, nil },
+		func(string, string, time.Duration) ([]net.IP, error) { return set, nil },
+	)
+	res := p.ProbeTarget(Target{Name: "T", Hostname: "seed.example", Network: "mainnet"})
+	if res.Status != StatusDownProbe {
+		t.Fatalf("uniform-zero target status = %s, want %s", res.Status, StatusDownProbe)
+	}
+	if !res.Status.hardDown() {
+		t.Fatalf("uniform-zero must be a hard down, so /healthz reports it")
+	}
+	for _, ns := range res.Nameservers {
+		if ns.Detail == "" {
+			t.Fatalf("%s: expected a detail naming the protocol-version check", ns.NS)
+		}
+	}
+}
+
+// TestZeroOnOneTargetIsNotProbeBlind bounds the rule above. Probing one target
+// faster than the cooldown really can drive it to zero on its own, which is the
+// documented cadence caveat and not a fault. As long as some other target still
+// handshakes, the prober is demonstrably able to measure, so the zero is data
+// about that target and must stay soft.
+func TestZeroOnOneTargetIsNotProbeBlind(t *testing.T) {
+	nsList := []NS{{Name: "ns1", IP: "10.0.0.1"}, {Name: "ns2", IP: "10.0.0.2"}}
+	cold := ips("1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4", "5.5.5.5", "6.6.6.6")
+	warm := ips("7.7.7.7", "8.8.8.8", "9.9.9.9", "10.10.10.10", "11.11.11.11", "12.12.12.12")
+	p := testProber(
+		// Only the testnet union handshakes; the mainnet union is all cooled down.
+		func(nw string, in []net.IP, _ int) (map[string]time.Duration, error) {
+			live := map[string]time.Duration{}
+			if nw == "testnet" {
+				for _, ip := range in {
+					live[ip.String()] = time.Millisecond
+				}
+			}
+			return live, nil
+		},
+		func(string, time.Duration) ([]NS, error) { return nsList, nil },
+		func(_, host string, _ time.Duration) ([]net.IP, error) {
+			if host == "cold.example" {
+				return cold, nil
+			}
+			return warm, nil
+		},
+	)
+	res := p.Run([]Target{
+		{Name: "Cold", Hostname: "cold.example", Network: "mainnet"},
+		{Name: "Warm", Hostname: "warm.example", Network: "testnet"},
+	})
+	if res[0].Status == StatusDownProbe {
+		t.Fatalf("a single cooled-down target must not read as probe blindness")
+	}
+	if res[0].Status.hardDown() {
+		t.Fatalf("Cold status = %s, must stay soft", res[0].Status)
+	}
+	if res[1].Status != StatusUp {
+		t.Fatalf("Warm status = %s, want %s", res[1].Status, StatusUp)
+	}
+}
+
 // TestHealthyAllUp: everyone fully live -> UP.
 func TestHealthyAllUp(t *testing.T) {
 	nsList := []NS{{Name: "ns1", IP: "10.0.0.1"}, {Name: "ns2", IP: "10.0.0.2"}}

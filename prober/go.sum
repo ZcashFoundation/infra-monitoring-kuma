@@ -28,8 +28,8 @@ github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+W
 github.com/onsi/gomega v1.4.1/go.mod h1:C1qb7wdrVGGVU+Z6iS04AVkA3Q65CEZX59MT0QO5uiA=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/zcashfoundation/dnsseeder v0.4.0 h1:I/FV2YdYLF1dxXVbdu9uCNCQ9qvBD6/9PD2Pbn2Qxj0=
-github.com/zcashfoundation/dnsseeder v0.4.0/go.mod h1:NGIrq15b4VvkYYC03e0UuwyVEYOQSW6m3iepouPpOxs=
+github.com/zcashfoundation/dnsseeder v0.5.0 h1:34BA4QbyOShpsFPjUt7K9zsgwFxiq5jqccZHn4gbS9I=
+github.com/zcashfoundation/dnsseeder v0.5.0/go.mod h1:NGIrq15b4VvkYYC03e0UuwyVEYOQSW6m3iepouPpOxs=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200115085410-6d4e4cb37c7d/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=

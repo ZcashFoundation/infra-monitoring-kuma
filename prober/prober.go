@@ -33,6 +33,10 @@ const (
 	StatusDiverging Status = "DOWN(divergence)"
 	// StatusDownDNS: the nameserver did not answer or returned no records.
 	StatusDownDNS Status = "DOWN(dns)"
+	// StatusDownProbe: every nameserver in the cohort answered with records and
+	// not one of those peers completed a handshake. That points at this side of
+	// the connection rather than at the seeders. See classify.
+	StatusDownProbe Status = "DOWN(probe)"
 )
 
 func (s Status) severity() int {
@@ -45,15 +49,17 @@ func (s Status) severity() int {
 		return 2
 	case StatusDownDNS:
 		return 3
-	default:
+	case StatusDownProbe:
 		return 4
+	default:
+		return 5
 	}
 }
 
 // hardDown reports whether a status is a real failure (drives exit code), as
 // opposed to the soft/inconclusive case.
 func (s Status) hardDown() bool {
-	return s == StatusDiverging || s == StatusDownDNS
+	return s == StatusDiverging || s == StatusDownDNS || s == StatusDownProbe
 }
 
 // Target is one seeder under test.
@@ -205,7 +211,47 @@ func (p *Prober) Run(targets []Target) []TargetResult {
 		res.Status, res.Message = p.classify(res.Nameservers)
 		results = append(results, res)
 	}
+	markProbeBlind(results)
 	return results
+}
+
+// markProbeBlind catches the case where the prober itself cannot handshake, as
+// opposed to the seeders serving dead peers.
+//
+// The test is deliberately run-wide rather than per-target. One target can
+// legitimately read zero when we probe it faster than the ~15 minute cooldown
+// and every peer it hands us is still refusing repeat connections — that is the
+// cadence caveat, and it is not a fault. What cooldown cannot explain is
+// handshaking nothing ANYWHERE while records resolve everywhere: independent
+// operators' peers do not all go quiet at once, so the common factor is us.
+//
+// The known cause is an advertised protocol version left behind by a network
+// upgrade, which newer peers refuse outright. Reported as a hard down because a
+// probe that cannot measure has to say so — reported soft, this exact shape sat
+// at zero live peers fleet-wide with /healthz still 200.
+func markProbeBlind(results []TargetResult) {
+	live, records := 0, 0
+	for _, r := range results {
+		for _, ns := range r.Nameservers {
+			live += ns.Live
+			records += ns.Records
+		}
+	}
+	if live > 0 || records == 0 {
+		return
+	}
+	for i := range results {
+		for j := range results[i].Nameservers {
+			if results[i].Nameservers[j].Status == StatusDownDNS {
+				continue
+			}
+			results[i].Nameservers[j].Status = StatusDownProbe
+			results[i].Nameservers[j].Detail = "no peer handshaked on any target — check the " +
+				"advertised protocol version against the seeder's floor, and that this host " +
+				"is not rate-limited"
+		}
+		results[i].Status, results[i].Message = rollup(results[i].Nameservers)
+	}
 }
 
 // ProbeTarget probes a single target.
@@ -296,6 +342,8 @@ func rollup(results []NSResult) (Status, string) {
 			parts = append(parts, fmt.Sprintf("%s=DIVERGING(%d/%d)", r.NS, r.Live, r.Records))
 		case StatusDownDNS:
 			parts = append(parts, fmt.Sprintf("%s=DOWN-dns", r.NS))
+		case StatusDownProbe:
+			parts = append(parts, fmt.Sprintf("%s=DOWN-probe(0/%d)", r.NS, r.Records))
 		}
 	}
 	return worst, strings.Join(parts, " ")

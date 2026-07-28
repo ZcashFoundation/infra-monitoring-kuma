@@ -36,9 +36,18 @@ prober compares the nameservers against each other:
   can land inside a self-induced cooldown (see below). Single-nameserver
   seeders (ECC, str4d) can only ever be INCONCLUSIVE, never DIVERGING.
 - **`DOWN(dns)`** — the nameserver didn't answer or returned no records.
+- **`DOWN(probe)`** — records resolved across the run and *not one* peer
+  handshaked, on any target. This is judged run-wide on purpose: probing a
+  single target faster than its cooldown really can drive that target to zero,
+  and that is the cadence caveat, not a fault. Handshaking nothing anywhere is
+  different — independent operators' peers do not all fall silent at once, so
+  the common factor is us. Check the advertised protocol version against the
+  seeder's floor first (see [Dependencies](#dependencies)), then whether the
+  probe host is rate-limited.
 - **`UP`** — records present, no divergence, absolute liveness fine.
 
-Exit code is non-zero only on a hard down (`DOWN(divergence)` / `DOWN(dns)`).
+Exit code is non-zero only on a hard down (`DOWN(divergence)` / `DOWN(dns)` /
+`DOWN(probe)`).
 
 ### The cooldown caveat (important for cadence)
 
@@ -107,10 +116,22 @@ an explicit list (hostnames or IPs) instead of auto-discovery.
 ## Dependencies
 
 Reuses the dnsseeder's own handshake so our "healthy" bar matches the seeder's
-exactly. Pinned to `dnsseeder v0.4.0` (the version `coredns-zcash` deploys) and
-**mirrors its `replace github.com/btcsuite/btcd => github.com/ZcashFoundation/btcd`**
-— without that replace the handshake would speak Bitcoin, not Zcash. Bump both
-when a network upgrade raises the protocol-version floor.
+exactly, and **mirrors its `replace github.com/btcsuite/btcd =>
+github.com/ZcashFoundation/btcd`** — without that replace the handshake would
+speak Bitcoin, not Zcash.
+
+Pinned to `dnsseeder v0.5.0`, which advertises **170150 (NU6.2)**. What this
+pin has to track is the protocol floor of the seeder under test, not whatever
+another deployment happens to run: the zeeder fleet serves only peers at its own
+floor, so a prober advertising less than that is refused by *every* peer it is
+handed.
+
+**Bump this at every network upgrade.** Left on `v0.4.0` (170140, NU6.1) after
+NU6.2 raised the floor, the prober returned 0 live peers on all six
+nameservers — TCP to `:8233` succeeded, the handshake did not. It was reported
+as `INCONCLUSIVE` with `/healthz` still 200, which is why `DOWN(probe)` now
+exists to make that shape loud. NU6.3 (Ironwood) raises the floor to 170160 and
+will reproduce it.
 
 ## Status / deferred
 
