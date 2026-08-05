@@ -1,0 +1,31 @@
+# Targets for the Zcash DNS-seeder health prober.
+#
+# For each target the prober enumerates the zone's authoritative nameservers,
+# queries each one directly for `hostname`'s A records, and handshake-validates
+# the returned IPs on the network's default p2p port (8233 mainnet / 18233
+# testnet). Set `nameservers:` to pin an explicit NS list (hostnames or IPs);
+# otherwise the set is auto-discovered from the zone's NS records.
+#
+# ZFND-operated seeders (ns1..ns6.zfnd.org) are the actionable targets. ECC and
+# str4d delegate to their own nameservers — probed for visibility, but ZFND
+# cannot fix another operator's backend.
+targets:
+  - name: ZFND Mainnet
+    hostname: mainnet.seeder.zfnd.org
+    network: mainnet
+
+  - name: ZFND Testnet
+    hostname: testnet.seeder.zfnd.org
+    network: testnet
+
+  - name: ECC Mainnet
+    hostname: dnsseed.z.cash
+    network: mainnet
+
+  - name: ECC Testnet
+    hostname: dnsseed.testnet.z.cash
+    network: testnet
+
+  - name: Str4d Mainnet
+    hostname: dnsseed.str4d.xyz
+    network: mainnet

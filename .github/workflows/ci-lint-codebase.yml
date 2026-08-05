@@ -7,6 +7,7 @@ on:
       - '**/Dockerfile'
       - 'scripts/**'
       - 'etc/litestream.yml'
+      - 'prober/**'
       - .github/workflows/ci-lint-codebase.yml
 
   push:
@@ -52,6 +53,38 @@ jobs:
           VALIDATE_JAVASCRIPT_ES: false
           VALIDATE_JAVASCRIPT_STANDARD: false
           VALIDATE_DOCKERFILE_HADOLINT: false
+          # Go is linted by the dedicated `go` job below. super-linter runs
+          # golangci-lint from the repo root, but the module lives in prober/,
+          # so it can't resolve imports and reports false positives ("undefined:
+          # yaml", spurious errcheck). Disable it here and lint Go with module
+          # context instead.
+          VALIDATE_GO: false
+          VALIDATE_GO_MODULES: false
           LINTER_RULES_PATH: /
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  go:
+    name: Go (prober)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4.1.7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.0.2
+        with:
+          go-version-file: prober/go.mod
+          cache-dependency-path: prober/go.sum
+
+      - name: gofmt, vet, test
+        working-directory: prober
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "gofmt needed on:"; echo "$unformatted"; exit 1
+          fi
+          go vet ./...
+          go test ./...

@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "seeder-prober",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
