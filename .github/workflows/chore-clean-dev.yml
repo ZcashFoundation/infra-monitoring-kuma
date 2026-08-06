@@ -16,26 +16,30 @@ jobs:
       id-token: 'write'
     steps:
       - name: Inject slug/short variables
-        uses: rlespinasse/github-slug-action@v5.7.0
+        uses: rlespinasse/github-slug-action@ef93b2ea4b6405d06fd8684fc3ff795d262ecae8 # v5.7.0
 
       - name: Authenticate to Google Cloud
         id: auth
-        uses: google-github-actions/auth@v3.0.0
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           workload_identity_provider: '${{ vars.GCP_WIF }}'
           project_id: '${{ vars.GCP_PROJECT }}'
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v3.0.1
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
       - name: Removing CR service
+        # Expressions go through env (not inline in run) so shell never parses
+        # attacker-influenced text — see zizmor's template-injection audit.
+        env:
+          SVC: ${{ vars.APP_NAME }}-${{ env.GITHUB_HEAD_REF_SLUG || env.GITHUB_REF_SLUG }}
+          REGION: ${{ vars.GCP_REGION }}
         run: |
-          svc="${{ vars.APP_NAME }}-${{ env.GITHUB_HEAD_REF_SLUG || env.GITHUB_REF_SLUG }}"
           # Only branches that deployed a preview Kuma have a service; skip the rest
           # (config/dependabot PRs, branch deletes) instead of failing on "not found".
-          if gcloud run services describe "$svc" --region="${{ vars.GCP_REGION }}" >/dev/null 2>&1; then
-            gcloud run services delete "$svc" --region="${{ vars.GCP_REGION }}" --quiet
-            echo "deleted $svc"
+          if gcloud run services describe "$SVC" --region="$REGION" >/dev/null 2>&1; then
+            gcloud run services delete "$SVC" --region="$REGION" --quiet
+            echo "deleted $SVC"
           else
-            echo "no dev service '$svc' — nothing to clean"
+            echo "no dev service '$SVC' — nothing to clean"
           fi
