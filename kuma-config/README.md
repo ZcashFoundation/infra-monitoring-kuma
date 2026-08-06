@@ -22,6 +22,8 @@ variables at run time (we keep them in 1Password) — there's no managed secret 
 provision for this. The only Secret Manager entry related to Kuma is
 `UPTIME_KUMA_DB_PASSWORD`, which the *runtime* needs (separate concern).
 
+Requires Node.js 18+ (declared in `package.json` `engines`; CI uses 20).
+
 ```sh
 npm install
 

@@ -4,6 +4,9 @@
   "private": true,
   "description": "Declarative config-as-code for Uptime Kuma 2.x (monitors + notifications) via Socket.IO.",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "apply": "node apply.js"
   },
