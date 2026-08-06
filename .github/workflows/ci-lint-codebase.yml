@@ -59,10 +59,12 @@ jobs:
           VALIDATE_DOCKERFILE_HADOLINT: false
           # One formatter per language: Biome owns JS/JSON (biome.json at repo
           # root), yamllint (VALIDATE_YAML) owns YAML. Running Prettier on the
-          # same files fights Biome's style and double-reports.
+          # same files fights Biome's style and double-reports. Markdown lint
+          # is off (VALIDATE_MARKDOWN above), so its formatter is off too.
           VALIDATE_JAVASCRIPT_PRETTIER: false
           VALIDATE_JSON_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
+          VALIDATE_MARKDOWN_PRETTIER: false
           LINTER_RULES_PATH: /
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

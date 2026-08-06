@@ -18,7 +18,7 @@ big one — configuring **notifications declaratively** (prod currently has none
 It's a **reconciler**, not strictly one-time: edit `kuma.yaml` and re-run when the
 monitor/notification set changes. In practice those changes are infrequent and
 run **locally/manually** by a team member, so secrets are passed as environment
-variables at run time (we keep them in 1Password) — there's no managed secret to
+variables at runtime (we keep them in 1Password) — there's no managed secret to
 provision for this. The only Secret Manager entry related to Kuma is
 `UPTIME_KUMA_DB_PASSWORD`, which the *runtime* needs (separate concern).
 
@@ -59,7 +59,7 @@ node apply.js                      # apply for real
 
 `kuma.yaml` references a notification's secret by **env var name**
 (`webhookEnv: SLACK_WEBHOOK_URL`) — the value is injected at apply time only and
-never written to git.
+never written to Git.
 
 ## Pipeline (prod)
 
@@ -71,7 +71,7 @@ tab (`workflow_dispatch`).
 **No secrets live in GitHub.** The job authenticates with keyless **Workload
 Identity Federation** as a least-privilege service account (`kuma-config-applier`,
 which holds only `secretAccessor` on the two secrets it reads) and pulls the admin
-password and Slack webhook from **Secret Manager** at run time — one source of
+password and Slack webhook from **Secret Manager** at runtime — one source of
 truth, one rotation point.
 
 To operate it, the `prod` GitHub environment provides these non-secret
