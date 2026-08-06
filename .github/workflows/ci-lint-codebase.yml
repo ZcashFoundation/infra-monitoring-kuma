@@ -38,6 +38,8 @@ jobs:
           # Full git history is needed to get a proper
           # list of changed files within `super-linter`
           fetch-depth: 0
+          # Lint only reads the tree; don't leave the token on disk (zizmor artipacked).
+          persist-credentials: false
 
       - name: Lint Code Base
         uses: super-linter/super-linter/slim@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
@@ -55,6 +57,12 @@ jobs:
           VALIDATE_JAVASCRIPT_ES: false
           VALIDATE_JAVASCRIPT_STANDARD: false
           VALIDATE_DOCKERFILE_HADOLINT: false
+          # One formatter per language: Biome owns JS/JSON (biome.json at repo
+          # root), yamllint (VALIDATE_YAML) owns YAML. Running Prettier on the
+          # same files fights Biome's style and double-reports.
+          VALIDATE_JAVASCRIPT_PRETTIER: false
+          VALIDATE_JSON_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
           LINTER_RULES_PATH: /
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
