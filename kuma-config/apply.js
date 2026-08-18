@@ -244,6 +244,7 @@ async function main() {
     }
 
     // 4. Monitors
+    const monitorIds = {}; // name -> id, for status page wiring below
     for (const m of cfg.monitors || []) {
         // Skip monitors whose ${VAR} placeholders weren't resolved (e.g. the
         // prober monitor before PROBER_BASE_URL is set) so we never create a
@@ -304,6 +305,7 @@ async function main() {
             monitorID = res.monitorID;
             log(`created monitor "${m.name}" (id=${monitorID})`);
         }
+        monitorIds[m.name] = monitorID;
 
         if (DRY_RUN) continue;
 
@@ -321,6 +323,59 @@ async function main() {
             await emit("addMonitorTag", tagID, monitorID, t.value || "");
             log(`  + tag ${t.name}=${t.value}`);
         }
+    }
+
+    // 5. Status pages (public, no-login views at /status/<slug>). Unlike the
+    // monitor reconcile, a page's layout is authoritative: saveStatusPage
+    // replaces its groups/monitors with the declared list. Pages not declared
+    // here are never touched. Events verified against 2.3.2 and 2.5.0:
+    // getStatusPage / addStatusPage / saveStatusPage have identical signatures.
+    for (const sp of cfg.statusPages || []) {
+        const existing = await emit("getStatusPage", sp.slug).catch(() => null);
+        if (DRY_RUN) {
+            log(
+                `[dry-run] ${existing ? "reconcile" : "create"} status page "${sp.slug}" (${(sp.groups || []).length} groups)`,
+            );
+            continue;
+        }
+        if (!existing) {
+            await emit("addStatusPage", sp.title, sp.slug);
+            log(`created status page "${sp.slug}"`);
+        }
+        const full = (await emit("getStatusPage", sp.slug)).config;
+        const groupList = (sp.groups || []).map((g) => ({
+            name: g.name,
+            monitorList: (g.monitors || [])
+                .filter((name) => {
+                    if (monitorIds[name] == null) {
+                        log(
+                            `  ! status page "${sp.slug}": unknown monitor "${name}" — skip`,
+                        );
+                        return false;
+                    }
+                    return true;
+                })
+                .map((name) => ({ id: monitorIds[name] })),
+        }));
+        // Round-trip the stored config so undeclared fields survive; icon goes
+        // through the imgDataUrl param (non-data: values are stored verbatim).
+        await emit(
+            "saveStatusPage",
+            sp.slug,
+            {
+                ...full,
+                slug: sp.slug,
+                title: sp.title,
+                description: sp.description ?? full.description ?? null,
+                theme: sp.theme || full.theme || "auto",
+                showTags: !!sp.showTags,
+                showPoweredBy: sp.showPoweredBy ?? full.showPoweredBy ?? false,
+                showCertificateExpiry: !!sp.showCertificateExpiry,
+            },
+            full.icon || "",
+            groupList,
+        );
+        log(`reconciled status page "${sp.slug}" (${groupList.length} groups)`);
     }
 
     log(DRY_RUN ? "dry-run complete" : "apply complete");

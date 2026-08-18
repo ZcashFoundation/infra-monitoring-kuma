@@ -162,3 +162,25 @@ monitors:
     notifications: [Slack]
     tags:
       - { name: Org, value: ZFND }
+
+# Public status pages, served without login at /status/<slug>. A page's layout
+# is authoritative: on apply, its groups/monitors are replaced by what is
+# declared here (pages not listed are never touched). The prober monitor is
+# intentionally not exposed — it's an internal signal.
+statusPages:
+  - slug: zfnd
+    title: ZFND Status
+    description: Live status of Zcash Foundation public services and DNS seeders.
+    showCertificateExpiry: true
+    groups:
+      - name: DNS Seeders
+        monitors:
+          - ZFND Mainnet
+          - ZFND Testnet
+          - ZODL Mainnet
+          - ZODL Testnet
+          - Str4d Mainnet
+      - name: Web Pages
+        monitors:
+          - ZFND Web Page
+          - Z.CASH Web Page
