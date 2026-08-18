@@ -167,13 +167,16 @@ monitors:
 # is authoritative: on apply, its groups/monitors are replaced by what is
 # declared here (pages not listed are never touched). The prober monitor is
 # intentionally not exposed — it's an internal signal.
+# Adopts the pre-existing "Ecosystem Dashboard" page (slug `dashboard`) rather
+# than creating a second one, so its URL and the Entry Page wiring survive.
 statusPages:
-  - slug: zfnd
-    title: ZFND Status
+  - slug: dashboard
+    title: Ecosystem Dashboard
     description: Live status of Zcash Foundation public services and DNS seeders.
+    showTags: true
     showCertificateExpiry: true
     groups:
-      - name: DNS Seeders
+      - name: Seeders
         monitors:
           - ZFND Mainnet
           - ZFND Testnet
