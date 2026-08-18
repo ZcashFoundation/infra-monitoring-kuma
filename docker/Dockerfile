@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
-ARG UPTIME_KUMA_VERSION=2.3.2
-FROM louislam/uptime-kuma:${UPTIME_KUMA_VERSION} AS runner
+ARG UPTIME_KUMA_VERSION=2.5.0
+# The -rootless variant is upstream's supported non-root image (USER node,
+# /app/data chowned to node) — the non-root contract is theirs to keep across
+# upgrades, not ours.
+FROM louislam/uptime-kuma:${UPTIME_KUMA_VERSION}-rootless AS runner
 
 ARG PORT=3001
 ENV PORT=${PORT}
@@ -8,10 +11,9 @@ ENV UPTIME_KUMA_IS_CONTAINER=1
 
 EXPOSE ${PORT}
 
-# Run as the image's built-in node user (uid 1000). Upstream pre-chowns
-# /app/data to node, and 2.3.2 starts clean as non-root (verified: HTTP up,
-# extra/healthcheck OK, DB written). Cloud Run's in-memory volume is a tmpfs
-# writable by any uid, so the /app/data mount keeps working.
+# Redundant at runtime (the -rootless base already sets it) but kept explicit:
+# image scanners read the Dockerfile, not the base image, and this keeps us
+# non-root even if the base tag ever changes.
 USER node
 
 # Reuse Uptime Kuma's built-in healthcheck (same as the upstream image).
