@@ -331,7 +331,12 @@ async function main() {
     // here are never touched. Events verified against 2.3.2 and 2.5.0:
     // getStatusPage / addStatusPage / saveStatusPage have identical signatures.
     for (const sp of cfg.statusPages || []) {
-        const existing = await emit("getStatusPage", sp.slug).catch(() => null);
+        // Kuma answers a missing slug with the literal "No slug?"; anything
+        // else (auth, transport) is a real failure and must abort the apply.
+        const existing = await emit("getStatusPage", sp.slug).catch((e) => {
+            if (e.message === "No slug?") return null;
+            throw e;
+        });
         if (DRY_RUN) {
             log(
                 `[dry-run] ${existing ? "reconcile" : "create"} status page "${sp.slug}" (${(sp.groups || []).length} groups)`,
@@ -368,9 +373,12 @@ async function main() {
                 title: sp.title,
                 description: sp.description ?? full.description ?? null,
                 theme: sp.theme || full.theme || "auto",
-                showTags: !!sp.showTags,
+                showTags: sp.showTags ?? full.showTags ?? false,
                 showPoweredBy: sp.showPoweredBy ?? full.showPoweredBy ?? false,
-                showCertificateExpiry: !!sp.showCertificateExpiry,
+                showCertificateExpiry:
+                    sp.showCertificateExpiry ??
+                    full.showCertificateExpiry ??
+                    false,
             },
             full.icon || "",
             groupList,
