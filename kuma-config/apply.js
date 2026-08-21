@@ -22,8 +22,8 @@
  *   node apply.js [--config kuma.yaml] [--dry-run]
  */
 
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 const yaml = require("js-yaml");
 const { io } = require("socket.io-client");
 
@@ -116,7 +116,8 @@ const NOTIFICATION_BUILDERS = { slack: buildSlackNotification };
 // added later (Phase 2) without blocking the rest of the apply.
 function expandEnv(text) {
     return text.replace(/\$\{(\w+)\}/g, (literal, name) =>
-        process.env[name] != null ? process.env[name] : literal);
+        process.env[name] != null ? process.env[name] : literal,
+    );
 }
 
 async function main() {
@@ -129,50 +130,74 @@ async function main() {
 
     // The server pushes these after a successful login.
     const pushed = { monitorList: {}, notificationList: [] };
-    socket.on("monitorList", (l) => { pushed.monitorList = l || {}; });
-    socket.on("notificationList", (l) => { pushed.notificationList = l || []; });
+    socket.on("monitorList", (l) => {
+        pushed.monitorList = l || {};
+    });
+    socket.on("notificationList", (l) => {
+        pushed.notificationList = l || [];
+    });
 
     const emit = (event, ...a) =>
         new Promise((resolve, reject) => {
             socket.emit(event, ...a, (res) => {
-                if (res && res.ok === false) reject(new Error(res.msg || `${event} failed`));
+                if (res && res.ok === false)
+                    reject(new Error(res.msg || `${event} failed`));
                 else resolve(res);
             });
         });
 
     await new Promise((resolve, reject) => {
         socket.once("connect", resolve);
-        socket.once("connect_error", (e) => reject(new Error(`connect failed: ${e.message}`)));
+        socket.once("connect_error", (e) =>
+            reject(new Error(`connect failed: ${e.message}`)),
+        );
     });
     log("connected to", KUMA_URL);
 
-    const loginRes = await emit("login", { username: KUMA_USERNAME, password: KUMA_PASSWORD, token: "" });
-    if (!loginRes || !loginRes.ok) throw new Error("login failed (check KUMA_USERNAME/KUMA_PASSWORD)");
+    const loginRes = await emit("login", {
+        username: KUMA_USERNAME,
+        password: KUMA_PASSWORD,
+        token: "",
+    });
+    if (!loginRes?.ok)
+        throw new Error("login failed (check KUMA_USERNAME/KUMA_PASSWORD)");
     log("logged in as", KUMA_USERNAME);
 
     await sleep(1500); // let the server push monitorList / notificationList
 
-    const existingNotifs = new Map((pushed.notificationList || []).map((n) => [n.name, n.id]));
-    const existingMonitors = new Map(Object.values(pushed.monitorList || {}).map((m) => [m.name, m]));
+    const existingNotifs = new Map(
+        (pushed.notificationList || []).map((n) => [n.name, n.id]),
+    );
+    const existingMonitors = new Map(
+        Object.values(pushed.monitorList || {}).map((m) => [m.name, m]),
+    );
     const tagsRes = await emit("getTags");
-    const existingTags = new Map(((tagsRes && tagsRes.tags) || []).map((t) => [t.name, t]));
+    const existingTags = new Map((tagsRes?.tags || []).map((t) => [t.name, t]));
 
     // 1. Notifications
     const notifIds = {};
     for (const n of cfg.notifications || []) {
         if (existingNotifs.has(n.name)) {
             notifIds[n.name] = existingNotifs.get(n.name);
-            log(`notification "${n.name}" exists (id=${notifIds[n.name]}) — skip`);
+            log(
+                `notification "${n.name}" exists (id=${notifIds[n.name]}) — skip`,
+            );
             continue;
         }
         if (n.webhookEnv && !process.env[n.webhookEnv]) {
-            log(`notification "${n.name}": ${n.webhookEnv} not set — skipping it. Monitors are created/reconciled without this channel; set ${n.webhookEnv} and re-run to attach it (reconcile wires it onto existing monitors too).`);
+            log(
+                `notification "${n.name}": ${n.webhookEnv} not set — skipping it. Monitors are created/reconciled without this channel; set ${n.webhookEnv} and re-run to attach it (reconcile wires it onto existing monitors too).`,
+            );
             continue;
         }
         const builder = NOTIFICATION_BUILDERS[n.type];
-        if (!builder) throw new Error(`unsupported notification type: ${n.type}`);
+        if (!builder)
+            throw new Error(`unsupported notification type: ${n.type}`);
         const payload = builder(n);
-        if (DRY_RUN) { log(`[dry-run] create notification "${n.name}" (${n.type})`); continue; }
+        if (DRY_RUN) {
+            log(`[dry-run] create notification "${n.name}" (${n.type})`);
+            continue;
+        }
         const res = await emit("addNotification", payload, null);
         notifIds[n.name] = res.id;
         log(`created notification "${n.name}" (id=${res.id})`);
@@ -186,7 +211,10 @@ async function main() {
             log(`tag "${name}" exists (id=${tagIds[name]}) — skip`);
             continue;
         }
-        if (DRY_RUN) { log(`[dry-run] create tag "${name}" (${color})`); continue; }
+        if (DRY_RUN) {
+            log(`[dry-run] create tag "${name}" (${color})`);
+            continue;
+        }
         const res = await emit("addTag", { name, color });
         tagIds[name] = res.tag.id;
         log(`created tag "${name}" (id=${tagIds[name]})`);
@@ -201,8 +229,16 @@ async function main() {
             log(`group "${g}" exists (id=${existing.id}) — skip`);
             continue;
         }
-        if (DRY_RUN) { log(`[dry-run] create group "${g}"`); continue; }
-        const res = await emit("add", { ...MONITOR_DEFAULTS, type: "group", name: g, parent: null });
+        if (DRY_RUN) {
+            log(`[dry-run] create group "${g}"`);
+            continue;
+        }
+        const res = await emit("add", {
+            ...MONITOR_DEFAULTS,
+            type: "group",
+            name: g,
+            parent: null,
+        });
         groupIds[g] = res.monitorID;
         log(`created group "${g}" (id=${res.monitorID})`);
     }
@@ -225,13 +261,13 @@ async function main() {
         const declared = {
             ...MONITOR_DEFAULTS,
             ...fields,
-            parent: group ? groupIds[group] ?? null : null,
+            parent: group ? (groupIds[group] ?? null) : null,
             notificationIDList: wantNotifs,
         };
 
         const existing = existingMonitors.get(m.name);
         let monitorID;
-        let existingTags = (existing && existing.tags) || [];
+        let existingTags = existing?.tags || [];
         if (existing) {
             // Reconcile in place: declared fields win, notifications are unioned
             // in (never removed). Round-trip the full monitor via getMonitor so we
@@ -239,21 +275,29 @@ async function main() {
             // monitors only — groups never get notifications (avoids double-notify).
             monitorID = existing.id;
             if (DRY_RUN) {
-                log(`[dry-run] reconcile monitor "${m.name}" (id=${monitorID})`);
+                log(
+                    `[dry-run] reconcile monitor "${m.name}" (id=${monitorID})`,
+                );
             } else {
-                const full = (await emit("getMonitor", monitorID))?.monitor || existing;
+                const full =
+                    (await emit("getMonitor", monitorID))?.monitor || existing;
                 existingTags = full.tags || existingTags;
                 await emit("editMonitor", {
                     ...full,
                     ...declared,
                     id: monitorID,
-                    notificationIDList: { ...(full.notificationIDList || {}), ...wantNotifs },
+                    notificationIDList: {
+                        ...(full.notificationIDList || {}),
+                        ...wantNotifs,
+                    },
                 });
                 log(`reconciled monitor "${m.name}" (id=${monitorID})`);
             }
         } else {
             if (DRY_RUN) {
-                log(`[dry-run] create monitor "${m.name}" (${m.type}) under "${group || "-"}" tags=${(tags || []).map((t) => t.name + ":" + t.value).join(",")}`);
+                log(
+                    `[dry-run] create monitor "${m.name}" (${m.type}) under "${group || "-"}" tags=${(tags || []).map((t) => `${t.name}:${t.value}`).join(",")}`,
+                );
                 continue;
             }
             const res = await emit("add", declared);
@@ -264,10 +308,15 @@ async function main() {
         if (DRY_RUN) continue;
 
         // Ensure declared tags are present (additive — never removes tags).
-        const haveTags = new Set(existingTags.map((t) => `${t.name}:${t.value || ""}`));
+        const haveTags = new Set(
+            existingTags.map((t) => `${t.name}:${t.value || ""}`),
+        );
         for (const t of tags || []) {
             const tagID = tagIds[t.name];
-            if (tagID == null) { log(`  ! unknown tag "${t.name}" — skip`); continue; }
+            if (tagID == null) {
+                log(`  ! unknown tag "${t.name}" — skip`);
+                continue;
+            }
             if (haveTags.has(`${t.name}:${t.value || ""}`)) continue;
             await emit("addMonitorTag", tagID, monitorID, t.value || "");
             log(`  + tag ${t.name}=${t.value}`);
@@ -278,8 +327,12 @@ async function main() {
     socket.close();
 }
 
-function log(...a) { console.log(...a); }
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+function log(...a) {
+    console.log(...a);
+}
+function sleep(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+}
 
 main().catch((e) => {
     console.error("error:", e.message);
