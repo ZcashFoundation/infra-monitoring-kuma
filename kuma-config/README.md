@@ -88,6 +88,18 @@ To operate it, the `prod` GitHub environment provides these non-secret
 Secrets read from Secret Manager (never GitHub): `UPTIME_KUMA_ADMIN_PASSWORD`,
 `SLACK_WEBHOOK_URL`.
 
+## Status pages
+
+`statusPages:` declares public, no-login views served at `/status/<slug>`
+(e.g. `https://status.zfnd.org/status/zfnd`). Unlike monitors, a page's layout
+is **authoritative**: on apply, its groups/monitors are replaced by the declared
+list. Pages not declared in the file are never touched. Monitors are referenced
+by name; unknown names are skipped with a warning (e.g. the prober before it
+exists in that instance).
+
+The `/dashboard` admin UI always requires login — publishing a status page is
+the supported way to expose state publicly, and only the monitors you list.
+
 ## Adding channels later
 
 Add another entry under `notifications:` (e.g. PagerDuty/email) with its own
