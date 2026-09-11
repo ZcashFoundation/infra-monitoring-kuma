@@ -59,5 +59,19 @@ jobs:
           echo "::add-mask::$KUMA_PASSWORD"
           echo "::add-mask::$SLACK_WEBHOOK_URL"
           export KUMA_PASSWORD SLACK_WEBHOOK_URL
+
+          # Optional, unlike the two above. Absent until the snapshot pipeline's
+          # push token is provisioned in Secret Manager and the applier SA is
+          # granted access, so a missing secret (or a denied read) must not fail
+          # the whole apply: apply.js skips a monitor whose ${VAR} is unresolved,
+          # which is exactly the behaviour we want while it is pending.
+          # Provision the secret and re-run this workflow to create the monitor.
+          SNAPSHOT_PUSH_TOKEN_MAINNET="$(gcloud secrets versions access latest --secret=SNAPSHOT_PUSH_TOKEN_MAINNET --project="$GCP_PROJECT" 2>/dev/null || true)"
+          if [ -n "$SNAPSHOT_PUSH_TOKEN_MAINNET" ]; then
+            echo "::add-mask::$SNAPSHOT_PUSH_TOKEN_MAINNET"
+          else
+            echo "SNAPSHOT_PUSH_TOKEN_MAINNET unavailable - the snapshot heartbeat monitor will be skipped"
+          fi
+          export SNAPSHOT_PUSH_TOKEN_MAINNET
           npm ci
           node apply.js
