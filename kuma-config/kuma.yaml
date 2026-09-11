@@ -195,6 +195,42 @@ monitors:
     tags:
       - { name: Org, value: ZFND }
 
+  # Heartbeat for the nightly mainnet chain-state snapshot cut in
+  # ZcashFoundation/zcash-fleet-ops. The workflow pushes here ONLY when the
+  # published snapshot height actually advanced, so this monitor answers "is
+  # fresh mainnet state reaching snapshots.zfnd.org", not merely "did a job run".
+  #
+  # Two silent deaths it covers that failure alerting cannot: GitHub disables
+  # scheduled workflows after 60 days of repository inactivity (no run, so no
+  # failure to alert on), and a run that republishes stale state is green.
+  #
+  # Deliberately NOT on the status page below — like the prober, this is an
+  # internal signal, not a user-facing service.
+  #
+  # 30h = the nightly cadence plus margin for a ~75min mainnet cut and one late
+  # start. Kuma 2.5.0 has no upper bound on interval (no MAX_INTERVAL_SECOND;
+  # Monitor.validate() checks only the minimum, and the add/edit handlers do not
+  # validate it at all), so this is accepted as declared.
+  #
+  # SNAPSHOT_PUSH_TOKEN_MAINNET must be in the apply environment. If it is unset
+  # apply.js leaves the ${...} unexpanded and SKIPS this monitor rather than
+  # creating it with a broken token — same mechanism as the prober's
+  # PROBER_BASE_URL. That is the desired failure mode: no half-built monitor.
+  - name: Zebra Snapshot Pipeline (mainnet)
+    type: push
+    pushToken: ${SNAPSHOT_PUSH_TOKEN_MAINNET}
+    interval: 108000
+    # Declared rather than inherited, per this file's convention. maxretries 0
+    # because retries are meaningless for a heartbeat: the 30h window IS the
+    # tolerance, and the defaults (3 x 20s) would only add a minute of noise.
+    maxretries: 0
+    retryInterval: 20
+    resendInterval: 0
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Mainnet }
+      - { name: Org, value: ZFND }
+
 # Public status pages, served without login at /status/<slug>. A page's layout
 # is authoritative: on apply, its groups/monitors are replaced by what is
 # declared here (pages not listed are never touched). The prober monitor is
