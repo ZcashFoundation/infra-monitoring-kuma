@@ -69,9 +69,17 @@ jobs:
           SNAPSHOT_PUSH_TOKEN_MAINNET="$(gcloud secrets versions access latest --secret=SNAPSHOT_PUSH_TOKEN_MAINNET --project="$GCP_PROJECT" 2>/dev/null || true)"
           if [ -n "$SNAPSHOT_PUSH_TOKEN_MAINNET" ]; then
             echo "::add-mask::$SNAPSHOT_PUSH_TOKEN_MAINNET"
+            export SNAPSHOT_PUSH_TOKEN_MAINNET
           else
+            # MUST unset, not export empty. apply.js expands ${VAR} whenever the
+            # env var is non-null, and "" is non-null - so exporting an empty
+            # value resolves the placeholder instead of leaving it, and the
+            # monitor is created (or an existing one RECONCILED) with a null
+            # pushToken. That would silently break a working heartbeat on any
+            # run where this read fails. Unset leaves ${...} unresolved, which
+            # is what makes apply.js skip the monitor.
+            unset SNAPSHOT_PUSH_TOKEN_MAINNET
             echo "SNAPSHOT_PUSH_TOKEN_MAINNET unavailable - the snapshot heartbeat monitor will be skipped"
           fi
-          export SNAPSHOT_PUSH_TOKEN_MAINNET
           npm ci
           node apply.js

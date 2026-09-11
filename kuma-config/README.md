@@ -70,9 +70,8 @@ tab (`workflow_dispatch`).
 
 **No secrets live in GitHub.** The job authenticates with keyless **Workload
 Identity Federation** as a least-privilege service account (`kuma-config-applier`,
-which holds only `secretAccessor` on the two secrets it reads) and pulls the admin
-password and Slack webhook from **Secret Manager** at runtime — one source of
-truth, one rotation point.
+which holds only `secretAccessor` on the secrets it reads) and pulls them from
+**Secret Manager** at runtime — one source of truth, one rotation point.
 
 To operate it, the `prod` GitHub environment provides these non-secret
 **variables** (secret *values* stay in Secret Manager):
@@ -85,8 +84,31 @@ To operate it, the `prod` GitHub environment provides these non-secret
 | `GCP_WIF` | Workload Identity provider (keyless auth) |
 | `GCP_KUMA_APPLIER_SA` | Service account the job impersonates |
 
-Secrets read from Secret Manager (never GitHub): `UPTIME_KUMA_ADMIN_PASSWORD`,
-`SLACK_WEBHOOK_URL`.
+Secrets read from Secret Manager (never GitHub):
+
+| Secret | Required? | Used by |
+|---|---|---|
+| `UPTIME_KUMA_ADMIN_PASSWORD` | yes — the apply fails without it | `apply.js` login |
+| `SLACK_WEBHOOK_URL` | yes | the `Slack` notification channel |
+| `SNAPSHOT_PUSH_TOKEN_MAINNET` | optional | `pushToken` of the `Zebra Snapshot Pipeline (mainnet)` monitor |
+
+Each needs `roles/secretmanager.secretAccessor` granted to `kuma-config-applier`
+**on that secret** — there is no project-level grant to inherit:
+
+```bash
+gcloud secrets add-iam-policy-binding <SECRET_NAME> \
+  --project=<GCP_PROJECT> \
+  --member=serviceAccount:<GCP_KUMA_APPLIER_SA> \
+  --role=roles/secretmanager.secretAccessor
+```
+
+The optional one is read tolerantly: if it is missing, or the grant above is
+absent, the apply logs that it is unavailable and continues, and `apply.js`
+skips the monitor whose `${VAR}` stayed unresolved. The variable is left
+**unset** rather than exported empty — `apply.js` expands any non-null value,
+including `""`, so exporting an empty string would resolve the placeholder and
+reconcile the monitor with a null `pushToken`, silently breaking a live
+heartbeat. Provision the secret and re-run the workflow to create it.
 
 ## Status pages
 
