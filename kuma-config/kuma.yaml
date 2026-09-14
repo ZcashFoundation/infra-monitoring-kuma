@@ -288,3 +288,6 @@ statusPages:
         monitors:
           - ZFND Web Page
           - Z.CASH Web Page
+      - name: Vote Chain
+        monitors:
+          - Zcash Vote Validator API
