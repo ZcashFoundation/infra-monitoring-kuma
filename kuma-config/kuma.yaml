@@ -30,6 +30,7 @@ notifications:
 groups:
   - DNS Seeders
   - Web Pages
+  - Vote Chain
 
 # Monitors. Each declares its own interval/retries so the desired state is
 # explicit here, not hidden in defaults. DNS monitors don't declare `timeout`
@@ -229,6 +230,36 @@ monitors:
     notifications: [Slack]
     tags:
       - { name: Network, value: Mainnet }
+      - { name: Org, value: ZFND }
+
+  # Shielded-Vote validator helper API (zvote-1). This is the endpoint voters'
+  # wallets actually reach, and the URL published in the voting config, so it is
+  # the thing worth probing rather than the host.
+  #
+  # node_info rather than / : Caddy reverse-proxies the helper API, and / is not
+  # a defined route, so the root returns 404. This path returns 200 with the
+  # chain id and moniker, which means a green check proves the chain API is
+  # answering, not merely that Caddy is up.
+  #
+  # expiryNotification because the certificate is issued by Caddy on the host
+  # via Let's Encrypt HTTP-01. Nothing else watches that renewal.
+  #
+  # Survives the GCP -> DigitalOcean migration by design: it probes the public
+  # name, not an address, so it stays green across the DNS cutover and goes red
+  # if the cutover breaks the API. That makes it a cutover check, not just
+  # steady-state monitoring.
+  - name: Zcash Vote Validator API
+    group: Vote Chain
+    type: http
+    url: https://zvote.zfnd.org/cosmos/base/tendermint/v1beta1/node_info
+    method: GET
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
+    expiryNotification: true
+    notifications: [Slack]
+    tags:
       - { name: Org, value: ZFND }
 
 # Public status pages, served without login at /status/<slug>. A page's layout
