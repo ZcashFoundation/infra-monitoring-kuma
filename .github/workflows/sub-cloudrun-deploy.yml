@@ -6,21 +6,10 @@ on:
       app_name:
         required: true
         type: string
-      registry:
-        required: true
-        type: string
       image_digest:
         required: true
         type: string
         description: The image digest to deploy
-      project_id:
-        required: false
-        type: string
-        description: The project to deploy to
-      region:
-        required: true
-        type: string
-        description: The region to deploy to
       environment:
         required: false
         type: string
@@ -136,8 +125,8 @@ jobs:
         uses: google-github-actions/deploy-cloudrun@2028e2d7d30a78c6910e0632e48dd561b064884d # v3.0.1
         with:
           service: ${{ inputs.app_name }}-${{ needs.versioning.outputs.version || env.GITHUB_HEAD_REF_SLUG || inputs.environment }}
-          image: ${{ inputs.registry }}/${{ inputs.app_name }}@${{ inputs.image_digest }}
-          region: ${{ inputs.region }}
+          image: ${{ vars.GAR_BASE }}/${{ inputs.app_name }}@${{ inputs.image_digest }}
+          region: ${{ vars.GCP_REGION }}
           gcloud_component: alpha
           env_vars: |
             UPTIME_KUMA_DB_TYPE=${{ vars.UPTIME_KUMA_DB_TYPE }}
@@ -166,7 +155,7 @@ jobs:
       - name: Allow unauthenticated calls to the service
         env:
           SERVICE: ${{ inputs.app_name }}-${{ needs.versioning.outputs.version || env.GITHUB_HEAD_REF_SLUG || inputs.environment }}
-          REGION: ${{ inputs.region }}
+          REGION: ${{ vars.GCP_REGION }}
         run: |
           gcloud run services add-iam-policy-binding "$SERVICE" \
           --region="$REGION" --member=allUsers --role=roles/run.invoker --quiet

@@ -40,7 +40,6 @@ jobs:
       dockerfile_path: ./docker/Dockerfile
       dockerfile_target: runner
       app_name: ${{ vars.APP_NAME }}
-      registry: ${{ vars.GAR_BASE }}
     secrets: inherit
 
   deploy:
@@ -48,10 +47,7 @@ jobs:
     uses: ./.github/workflows/sub-cloudrun-deploy.yml
     with:
       environment: dev
-      project_id: ${{ vars.GCP_PROJECT }}
-      region: ${{ vars.GCP_REGION }}
       app_name: ${{ vars.APP_NAME }}
-      registry: ${{ vars.GAR_BASE }}
       image_digest: ${{ needs.build.outputs.image_digest }}
       min_instances: '0'
       # Pinned to 1: Kuma is stateful (one monitor loop per instance); >1 would
