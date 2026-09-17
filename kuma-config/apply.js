@@ -39,6 +39,9 @@ const configPath = (() => {
     return args[i + 1];
 })();
 
+// Upper bound for any single Kuma round-trip (server info, each emit ack).
+const EMIT_TIMEOUT_MS = 30000;
+
 const KUMA_URL = requireEnv("KUMA_URL");
 const KUMA_USERNAME = requireEnv("KUMA_USERNAME");
 const KUMA_PASSWORD = requireEnv("KUMA_PASSWORD");
@@ -137,10 +140,17 @@ async function main() {
         pushed.notificationList = l || [];
     });
 
+    // Kuma registers its socket handlers only after pushing "info", and building
+    // "info" queries the DB whenever its 60s settings cache is cold. Anything
+    // emitted before then is silently dropped and its ack never arrives, so wait
+    // for "info" first, and bound every ack so a lost event fails loudly.
+    const ready = new Promise((resolve) => socket.once("info", resolve));
+
     const emit = (event, ...a) =>
         new Promise((resolve, reject) => {
-            socket.emit(event, ...a, (res) => {
-                if (res && res.ok === false)
+            socket.timeout(EMIT_TIMEOUT_MS).emit(event, ...a, (err, res) => {
+                if (err) reject(new Error(`${event}: no response from Kuma`));
+                else if (res && res.ok === false)
                     reject(new Error(res.msg || `${event} failed`));
                 else resolve(res);
             });
@@ -153,6 +163,8 @@ async function main() {
         );
     });
     log("connected to", KUMA_URL);
+
+    await withTimeout(ready, "server info");
 
     const loginRes = await emit("login", {
         username: KUMA_USERNAME,
@@ -392,6 +404,18 @@ async function main() {
 
 function log(...a) {
     console.log(...a);
+}
+// Rejects if `promise` doesn't settle within EMIT_TIMEOUT_MS; the timer is
+// always cleared so a settled race can't leave a stray rejection behind.
+function withTimeout(promise, what) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(
+            () => reject(new Error(`${what}: no response from Kuma`)),
+            EMIT_TIMEOUT_MS,
+        );
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
