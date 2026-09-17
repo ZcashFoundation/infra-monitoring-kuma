@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG UPTIME_KUMA_VERSION=2.5.0
+ARG UPTIME_KUMA_VERSION=2.5.5
 # The -rootless variant is upstream's supported non-root image (USER node,
 # /app/data chowned to node) — the non-root contract is theirs to keep across
 # upgrades, not ours.
