@@ -9,10 +9,9 @@ on:
       - .github/workflows/sub-cloudrun-deploy.yml
 
 concurrency:
-  # Ensures that only one workflow task will run at a time. Previous builds, if
-  # already in process, will get cancelled. Only the latest commit will be allowed
-  # to run, cancelling any workflows in between
-  group: ${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.run_id }}
+  # Keyed on the branch and shared with chore-clean-dev.yml: a newer deploy of the
+  # branch cancels the running one, and a cleanup waits for it instead of racing.
+  group: dev-preview-${{ github.head_ref }}
   cancel-in-progress: true
 
 permissions:
@@ -56,3 +55,67 @@ jobs:
       cpu: '1'
       memory: 1Gi
     secrets: inherit
+
+  # The shared concurrency group makes a cleanup wait for a running deploy, but it
+  # is not a durable ordering: GitHub keeps one pending run per group and lets the
+  # newer run cancel the running one, so a deploy queued after the PR closed (a
+  # push racing the close) can drop the cleanup. Re-checking the PR once the
+  # service exists closes that gap: whichever finishes last removes it.
+  remove-if-closed:
+    needs: [build, deploy]
+    # Also after a failed deploy: it may have created the service before failing
+    # (IAM binding, smoke test). Skipped only when nothing was built (draft PRs).
+    if: ${{ !cancelled() && needs.build.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: read
+    steps:
+      - name: Check the PR is still open
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Fails closed: if the state can't be read, nothing below runs.
+          state="$(gh pr view "$PR" --repo "$REPO" --json state --jq .state)"
+          case "$state" in OPEN|CLOSED|MERGED) ;; *) echo "::error::unexpected PR state '$state'"; exit 1 ;; esac
+          echo "PR #$PR is $state"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+
+      - name: Inject slug/short variables
+        if: steps.pr.outputs.state != 'OPEN'
+        uses: rlespinasse/github-slug-action@ef93b2ea4b6405d06fd8684fc3ff795d262ecae8 # v5.7.0
+
+      - name: Authenticate to Google Cloud
+        if: steps.pr.outputs.state != 'OPEN'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: '${{ vars.GCP_WIF }}'
+          project_id: '${{ vars.GCP_PROJECT }}'
+
+      - name: Set up Cloud SDK
+        if: steps.pr.outputs.state != 'OPEN'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Remove the preview of a PR that closed during the deploy
+        if: steps.pr.outputs.state != 'OPEN'
+        env:
+          SVC: ${{ vars.APP_NAME }}-${{ env.GITHUB_HEAD_REF_SLUG }}
+          REGION: ${{ vars.GCP_REGION }}
+        run: |
+          set -uo pipefail
+          # A deploy that failed before creating the service leaves nothing to
+          # delete; any other error must fail. Same logic as chore-clean-dev.yml.
+          if out="$(gcloud run services describe "$SVC" --region="$REGION" --format='value(metadata.name)' 2>&1)"; then
+            gcloud run services delete "$SVC" --region="$REGION" --quiet
+            echo "PR closed while deploying — deleted $SVC"
+          elif [[ "$out" == *"Cannot find service"* ]]; then
+            echo "PR closed while deploying — no service '$SVC' to delete"
+          else
+            echo "::error::could not check $SVC: $out"
+            exit 1
+          fi
