@@ -31,6 +31,7 @@ groups:
   - DNS Seeders
   - Web Pages
   - Vote Chain
+  - Snapshots
 
 # Monitors. Each declares its own interval/retries so the desired state is
 # explicit here, not hidden in defaults. DNS monitors don't declare `timeout`
@@ -196,6 +197,54 @@ monitors:
     tags:
       - { name: Org, value: ZFND }
 
+  # Public availability of the chain-state snapshot indexes that node operators
+  # bootstrap from. Distinct from the pipeline heartbeats below: this answers
+  # "can a user fetch the index right now", they answer "did fresh state get
+  # published". Both are needed — the index can serve perfectly while the
+  # pipeline is dead, and vice versa.
+  #
+  # json-query rather than a keyword: Kuma's keyword check is a substring match
+  # on the raw body, so `"network": "mainnet"` would break the day the publisher
+  # emits compact JSON. The query parses the document (JSONata), and asserting
+  # the first entry's network covers reachability, valid JSON, a non-empty index
+  # (an empty array makes the query undefined -> DOWN) and the right network
+  # published under this path, in one check.
+  - name: Snapshot Index (mainnet)
+    group: Snapshots
+    type: json-query
+    url: https://snapshots.zfnd.org/mainnet/snapshots.json
+    method: GET
+    jsonPath: $[0].network
+    jsonPathOperator: "=="
+    expectedValue: mainnet
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
+    expiryNotification: true
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Mainnet }
+      - { name: Org, value: ZFND }
+
+  - name: Snapshot Index (testnet)
+    group: Snapshots
+    type: json-query
+    url: https://snapshots.zfnd.org/testnet/snapshots.json
+    method: GET
+    jsonPath: $[0].network
+    jsonPathOperator: "=="
+    expectedValue: testnet
+    interval: 60
+    retryInterval: 20
+    maxretries: 3
+    timeout: 15
+    expiryNotification: true
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Testnet }
+      - { name: Org, value: ZFND }
+
   # Heartbeat for the nightly mainnet chain-state snapshot cut in
   # ZcashFoundation/zcash-fleet-ops. The workflow pushes here ONLY when the
   # published snapshot height actually advanced, so this monitor answers "is
@@ -310,6 +359,10 @@ statusPages:
         monitors:
           - ZFND Web Page
           - Z.CASH Web Page
+      - name: Snapshots
+        monitors:
+          - Snapshot Index (mainnet)
+          - Snapshot Index (testnet)
       - name: Vote Chain
         monitors:
           - Zcash Vote Validator API
