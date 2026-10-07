@@ -137,9 +137,14 @@ jobs:
           env_vars_update_strategy: overwrite
           secrets: |
             UPTIME_KUMA_DB_PASSWORD=UPTIME_KUMA_DB_PASSWORD:latest
+          # Limits are set at both levels. Revision-level is what is enforced today;
+          # service-level mirrors it so the console shows the real limits and the
+          # service stays capped if a revision is ever deployed without them.
           flags: |
             --min-instances=${{ inputs.min_instances }}
             --max-instances=${{ inputs.max_instances }}
+            --min=${{ inputs.min_instances }}
+            --max=${{ inputs.max_instances }}
             --cpu=${{ inputs.cpu }}
             --memory=${{ inputs.memory }}
             ${{ inputs.no_cpu_throttling && '--no-cpu-throttling' || '' }}
