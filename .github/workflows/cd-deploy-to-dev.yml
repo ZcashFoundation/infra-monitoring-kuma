@@ -62,7 +62,10 @@ jobs:
   # push racing the close) can drop the cleanup. Re-checking the PR once the
   # service exists closes that gap: whichever finishes last removes it.
   remove-if-closed:
-    needs: [deploy]
+    needs: [build, deploy]
+    # Also after a failed deploy: it may have created the service before failing
+    # (IAM binding, smoke test). Skipped only when nothing was built (draft PRs).
+    if: ${{ !cancelled() && needs.build.result != 'skipped' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -104,5 +107,15 @@ jobs:
           SVC: ${{ vars.APP_NAME }}-${{ env.GITHUB_HEAD_REF_SLUG }}
           REGION: ${{ vars.GCP_REGION }}
         run: |
-          gcloud run services delete "$SVC" --region="$REGION" --quiet
-          echo "PR closed while deploying — deleted $SVC"
+          set -uo pipefail
+          # A deploy that failed before creating the service leaves nothing to
+          # delete; any other error must fail. Same logic as chore-clean-dev.yml.
+          if out="$(gcloud run services describe "$SVC" --region="$REGION" --format='value(metadata.name)' 2>&1)"; then
+            gcloud run services delete "$SVC" --region="$REGION" --quiet
+            echo "PR closed while deploying — deleted $SVC"
+          elif [[ "$out" == *"Cannot find service"* ]]; then
+            echo "PR closed while deploying — no service '$SVC' to delete"
+          else
+            echo "::error::could not check $SVC: $out"
+            exit 1
+          fi
