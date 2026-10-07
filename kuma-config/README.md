@@ -91,6 +91,7 @@ Secrets read from Secret Manager (never GitHub):
 | `UPTIME_KUMA_ADMIN_PASSWORD` | yes — the apply fails without it | `apply.js` login |
 | `SLACK_WEBHOOK_URL` | yes | the `Slack` notification channel |
 | `SNAPSHOT_PUSH_TOKEN_MAINNET` | optional | `pushToken` of the `Zebra Snapshot Pipeline (mainnet)` monitor |
+| `SNAPSHOT_PUSH_TOKEN_TESTNET` | optional | `pushToken` of the `Zebra Snapshot Pipeline (testnet)` monitor |
 
 Each needs `roles/secretmanager.secretAccessor` granted to `kuma-config-applier`
 **on that secret** — there is no project-level grant to inherit:
@@ -102,9 +103,9 @@ gcloud secrets add-iam-policy-binding <SECRET_NAME> \
   --role=roles/secretmanager.secretAccessor
 ```
 
-The optional one is read tolerantly: if it is missing, or the grant above is
+The optional ones are read tolerantly: if one is missing, or the grant above is
 absent, the apply logs that it is unavailable and continues, and `apply.js`
-skips the monitor whose `${VAR}` stayed unresolved. The variable is left
+skips the monitor whose `${VAR}` stayed unresolved. Each variable is left
 **unset** rather than exported empty — `apply.js` expands any non-null value,
 including `""`, so exporting an empty string would resolve the placeholder and
 reconcile the monitor with a null `pushToken`, silently breaking a live
