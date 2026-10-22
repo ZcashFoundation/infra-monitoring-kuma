@@ -303,6 +303,62 @@ monitors:
       - { name: Network, value: Testnet }
       - { name: Org, value: ZFND }
 
+  # Snapshot pipeline freshness, pulled from the public index (#69). Replaces the
+  # push heartbeats above: Kuma schedules a push monitor's first check a full
+  # interval after it starts, and Cloud Run restarts it every few days, so a
+  # 9-day push window would rarely evaluate. These evaluate on every start.
+  #
+  # DOWN unless the newest entry's height advanced past the previous one AND
+  # it is younger than the window (30h nightly mainnet, 9 days weekly testnet).
+  # The index is newest-first. An empty index or missing fields fail DOWN
+  # explicitly; without the guard, JSONata reads them as undefined and the check
+  # passes. Internal signal, so not on the status page.
+  - name: Zebra Snapshot Freshness (mainnet)
+    type: json-query
+    url: https://snapshots.zfnd.org/mainnet/snapshots.json
+    method: GET
+    jsonPath: >-
+      ($not($exists($[0].height)) or $not($exists($[0].date)))
+      ? "newest entry has no height or date (empty or changed index)"
+      : ($[0].height <= $[1].height)
+      ? ("height " & $string($[0].height) & " did not advance past the previous publish")
+      : (($toMillis($now()) - $toMillis($[0].date)) > 108000000
+        ? ("newest snapshot " & $[0].date & " is older than 30h")
+        : "fresh")
+    jsonPathOperator: "=="
+    expectedValue: fresh
+    interval: 300
+    retryInterval: 60
+    maxretries: 3
+    timeout: 15
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Mainnet }
+      - { name: Org, value: ZFND }
+
+  - name: Zebra Snapshot Freshness (testnet)
+    type: json-query
+    url: https://snapshots.zfnd.org/testnet/snapshots.json
+    method: GET
+    jsonPath: >-
+      ($not($exists($[0].height)) or $not($exists($[0].date)))
+      ? "newest entry has no height or date (empty or changed index)"
+      : ($[0].height <= $[1].height)
+      ? ("height " & $string($[0].height) & " did not advance past the previous publish")
+      : (($toMillis($now()) - $toMillis($[0].date)) > 777600000
+        ? ("newest snapshot " & $[0].date & " is older than 9 days")
+        : "fresh")
+    jsonPathOperator: "=="
+    expectedValue: fresh
+    interval: 300
+    retryInterval: 60
+    maxretries: 3
+    timeout: 15
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Testnet }
+      - { name: Org, value: ZFND }
+
   # Shielded-Vote validator helper API (zvote-1). This is the endpoint voters'
   # wallets actually reach, and the URL published in the voting config, so it is
   # the thing worth probing rather than the host.
