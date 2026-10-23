@@ -92,6 +92,10 @@ Secrets read from Secret Manager (never GitHub):
 | `SLACK_WEBHOOK_URL` | yes | the `Slack` notification channel |
 | `SNAPSHOT_PUSH_TOKEN_MAINNET` | optional | `pushToken` of the `Zebra Snapshot Pipeline (mainnet)` monitor |
 | `SNAPSHOT_PUSH_TOKEN_TESTNET` | optional | `pushToken` of the `Zebra Snapshot Pipeline (testnet)` monitor |
+| `SNAPSHOT_SOURCE_PUSH_TOKEN_MAINNET` | optional | `pushToken` of the `Zebra Snapshot Source Image (mainnet)` monitor |
+| `SNAPSHOT_SOURCE_PUSH_TOKEN_TESTNET` | optional | `pushToken` of the `Zebra Snapshot Source Image (testnet)` monitor |
+| `SNAPSHOT_MAJOR_PUSH_TOKEN_MAINNET` | optional | `pushToken` of the `Zebra Snapshot Current Major (mainnet)` monitor |
+| `SNAPSHOT_MAJOR_PUSH_TOKEN_TESTNET` | optional | `pushToken` of the `Zebra Snapshot Current Major (testnet)` monitor |
 
 Each needs `roles/secretmanager.secretAccessor` granted to `kuma-config-applier`
 **on that secret** — there is no project-level grant to inherit:
@@ -110,6 +114,14 @@ skips the monitor whose `${VAR}` stayed unresolved. Each variable is left
 including `""`, so exporting an empty string would resolve the placeholder and
 reconcile the monitor with a null `pushToken`, silently breaking a live
 heartbeat. Provision the secret and re-run the workflow to create it.
+
+The push tokens are at most 32 characters (generate one with `openssl rand -hex 16`).
+For the `Source Image` and `Current Major` monitors, the sender is the
+`follow-release` workflow in `ZcashFoundation/zcash-fleet-ops`, which needs the
+matching `KUMA_PUSH_URL_SOURCE_<NET>` or `KUMA_PUSH_URL_MAJOR_<NET>` GitHub
+secret set to the full `https://<kuma host>/api/push/<token>` URL. The
+provisioning order is in `runbooks/zfnd-fleet-operations.md`, Scenario 14, in
+that repository.
 
 ## Status pages
 
