@@ -361,6 +361,67 @@ monitors:
       - { name: Network, value: Testnet }
       - { name: Org, value: ZFND }
 
+  # Owner alerts pushed by ZcashFoundation/zcash-fleet-ops' follow-release
+  # workflow (zebra#11921): the snapshot source runs a different image from the
+  # release fleet, or the index has no latest-v<current database major> 48 hours
+  # after the first Zebra release that shipped that major. Push because only
+  # follow-release sees the GCE image metadata, and the major check needs two
+  # documents (the GitHub release and the index).
+  #
+  # An explicit status=up|down notifies immediately; interval 86400 only backstops
+  # follow-release going silent. maxretries 0: with retries a down push becomes
+  # PENDING and the scheduled check escalates it as "No heartbeat".
+  #
+  # Internal, so not on the status page. Skipped by apply.js until its token is
+  # provisioned.
+  - name: Zebra Snapshot Source Image (mainnet)
+    type: push
+    pushToken: ${SNAPSHOT_SOURCE_PUSH_TOKEN_MAINNET}
+    interval: 86400
+    maxretries: 0
+    retryInterval: 60
+    resendInterval: 0
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Mainnet }
+      - { name: Org, value: ZFND }
+
+  - name: Zebra Snapshot Source Image (testnet)
+    type: push
+    pushToken: ${SNAPSHOT_SOURCE_PUSH_TOKEN_TESTNET}
+    interval: 86400
+    maxretries: 0
+    retryInterval: 60
+    resendInterval: 0
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Testnet }
+      - { name: Org, value: ZFND }
+
+  - name: Zebra Snapshot Current Major (mainnet)
+    type: push
+    pushToken: ${SNAPSHOT_MAJOR_PUSH_TOKEN_MAINNET}
+    interval: 86400
+    maxretries: 0
+    retryInterval: 60
+    resendInterval: 0
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Mainnet }
+      - { name: Org, value: ZFND }
+
+  - name: Zebra Snapshot Current Major (testnet)
+    type: push
+    pushToken: ${SNAPSHOT_MAJOR_PUSH_TOKEN_TESTNET}
+    interval: 86400
+    maxretries: 0
+    retryInterval: 60
+    resendInterval: 0
+    notifications: [Slack]
+    tags:
+      - { name: Network, value: Testnet }
+      - { name: Org, value: ZFND }
+
   # Shielded-Vote validator helper API (zvote-1). This is the endpoint voters'
   # wallets actually reach, and the URL published in the voting config, so it is
   # the thing worth probing rather than the host.
