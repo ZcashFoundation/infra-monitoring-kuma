@@ -307,6 +307,42 @@ monitors:
       - { name: Network, value: Testnet }
       - { name: Org, value: ZFND }
 
+  # perf.zfnd.org, the zebra-perf-stats dashboard (Optimized Zebra vs Zakura).
+  # The host re-renders both pages every 5 minutes and rewrites health.json
+  # with published_at (Unix seconds) whenever a page changes. When reports
+  # fail, the watchdog stops the stack, or the host is down, the last pages
+  # stay up and only published_at shows it, so this checks freshness rather
+  # than reachability.
+  #
+  # The window is 2 h, not a few cycles: a cutover to new binaries freezes the
+  # pages until the new experiment's first measured pair, up to about 1.5 h
+  # (READY_SECONDS + PAIR_SECONDS), and that is a normal deploy, not an outage.
+  # Missing fields fail DOWN explicitly (see the snapshot freshness monitors).
+  # Internal signal, so not on the status page.
+  - name: Perf Stats Dashboard Freshness
+    group: Web Pages
+    type: json-query
+    url: https://perf.zfnd.org/health.json
+    method: GET
+    jsonPath: >-
+      $not($exists(published_at))
+      ? "health.json has no published_at"
+      : $not("index.html" in pages and "testnet.html" in pages)
+      ? "health.json does not list both index.html and testnet.html"
+      : (($toMillis($now()) - published_at * 1000) > 7200000
+        ? ("last publish " & $fromMillis(published_at * 1000) & " is older than 2h")
+        : "fresh")
+    jsonPathOperator: "=="
+    expectedValue: fresh
+    interval: 300
+    retryInterval: 60
+    maxretries: 3
+    timeout: 15
+    expiryNotification: true
+    notifications: [Slack]
+    tags:
+      - { name: Org, value: ZFND }
+
   # Shielded-Vote validator helper API (zvote-1). This is the endpoint voters'
   # wallets actually reach, and the URL published in the voting config, so it is
   # the thing worth probing rather than the host.
